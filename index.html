@@ -179,6 +179,23 @@
           </p>
         </div>
 
+        <!-- Commander Callsign Profile -->
+        <div class="mb-5 p-3 sm:p-3.5 rounded-2xl bg-black/35 border border-white/10 flex items-center justify-between gap-3 shadow-inner">
+          <div class="flex items-center gap-2.5 overflow-hidden flex-grow">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500/20 to-indigo-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 text-sm shrink-0">
+              <i class="fa-solid fa-user-astronaut"></i>
+            </div>
+            <div class="flex-grow truncate">
+              <label for="inputLobbyCallsign" class="text-[9px] font-mono text-cyan-400 uppercase tracking-wider block">Your Commander Callsign</label>
+              <input id="inputLobbyCallsign" type="text" maxlength="15" placeholder="Enter Your Callsign (e.g. Maverick)" class="w-full bg-transparent text-white font-orbitron font-bold text-xs sm:text-sm focus:outline-none placeholder:text-gray-600 placeholder:font-sans placeholder:font-normal truncate" value="">
+            </div>
+          </div>
+          <span class="text-[9px] font-mono text-emerald-400 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 shrink-0 flex items-center gap-1">
+            <i class="fa-solid fa-check text-[8px]"></i>
+            <span class="hidden sm:inline">Saved</span>
+          </span>
+        </div>
+
         <!-- Mode Selectors -->
         <div class="space-y-4">
           <!-- 1. Create Private Room (P2P Host) -->
@@ -314,10 +331,22 @@
         </div>
       </div>
 
-      <!-- Turn Announcement Ribbon -->
-      <div id="turnBanner" class="w-full text-center py-2 px-4 rounded-xl bg-white/5 border border-white/10 font-orbitron text-xs sm:text-sm font-semibold tracking-wider text-gray-200 flex items-center justify-center gap-2">
-        <span>CURRENT TURN:</span>
-        <span id="turnPlayerSpan" class="text-cyan-400 font-bold text-glow-cyan">X</span>
+      <!-- Turn Announcement Ribbon & Move Timer -->
+      <div id="turnBannerContainer" class="w-full flex flex-col gap-1.5">
+        <div id="turnBanner" class="w-full text-center py-2 px-3 sm:px-4 rounded-xl bg-white/5 border border-white/10 font-orbitron text-xs sm:text-sm font-semibold tracking-wider text-gray-200 flex items-center justify-between">
+          <div class="flex items-center gap-1.5 sm:gap-2 truncate">
+            <span class="text-gray-400 text-[11px] sm:text-xs uppercase font-mono">Turn:</span>
+            <span id="turnPlayerSpan" class="text-cyan-400 font-bold text-glow-cyan truncate">Player 1 (X)</span>
+          </div>
+          <div id="turnTimerBadge" class="hidden items-center gap-1.5 font-mono text-[11px] sm:text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2.5 py-0.5 rounded-lg shrink-0">
+            <i class="fa-solid fa-stopwatch text-amber-400 animate-pulse text-xs"></i>
+            <span id="timerSeconds" class="font-bold">15</span>s
+          </div>
+        </div>
+        <!-- Animated Countdown Bar -->
+        <div id="turnProgressWrapper" class="w-full h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/10 hidden">
+          <div id="turnProgressBar" class="h-full bg-gradient-to-r from-cyan-400 via-indigo-400 to-fuchsia-400 transition-all duration-100 ease-linear rounded-full" style="width: 100%;"></div>
+        </div>
       </div>
 
       <!-- 3x3 Antigravity Game Board -->
@@ -464,6 +493,114 @@
     </div>
   </div>
 
+  <!-- Host Setup Modal (Callsign & Move Timer) -->
+  <div id="hostSetupModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="glass-panel border border-cyan-500/30 rounded-3xl p-5 sm:p-7 max-w-md w-full shadow-2xl relative overflow-hidden transition-all duration-300">
+      
+      <!-- Glow Orbs -->
+      <div class="absolute -top-10 -right-10 w-28 h-28 bg-cyan-500/20 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="absolute -bottom-10 -left-10 w-28 h-28 bg-fuchsia-500/20 rounded-full blur-2xl pointer-events-none"></div>
+
+      <!-- Close Button -->
+      <button id="btnHostModalClose" class="absolute top-4 right-4 text-gray-400 hover:text-white p-2 rounded-xl hover:bg-white/10 transition text-sm" title="Close">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+
+      <!-- Modal Header -->
+      <div class="flex items-center space-x-3 mb-5">
+        <div class="w-11 h-11 rounded-2xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 flex items-center justify-center text-xl shadow-lg">
+          <i class="fa-solid fa-gamepad"></i>
+        </div>
+        <div>
+          <h3 class="font-orbitron font-extrabold text-base sm:text-lg text-white tracking-wide">
+            LAUNCH CHAMBER
+          </h3>
+          <p class="text-[11px] text-cyan-300/70 font-mono">Configure Match Settings &amp; Rules</p>
+        </div>
+      </div>
+
+      <!-- Callsign Input -->
+      <div class="mb-4">
+        <label for="hostCallsignInput" class="text-[10px] font-mono text-gray-300 uppercase tracking-wider block mb-1.5">
+          Your Commander Callsign (Player 1)
+        </label>
+        <div class="relative">
+          <input id="hostCallsignInput" type="text" maxlength="15" placeholder="e.g. Maverick (default: Player 1)" class="w-full px-4 py-2.5 rounded-xl bg-black/50 border border-white/10 text-white font-orbitron font-bold text-sm focus:border-cyan-400 focus:outline-none placeholder:text-gray-600 placeholder:font-sans placeholder:font-normal">
+          <div class="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-400 text-xs font-mono font-bold">X</div>
+        </div>
+      </div>
+
+      <!-- Move Timer Selector -->
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="text-[10px] font-mono text-gray-300 uppercase tracking-wider">Turn Move Timer</label>
+          <span class="text-[10px] font-mono text-amber-400 flex items-center gap-1">
+            <i class="fa-solid fa-stopwatch text-xs"></i> Forfeit on 0s
+          </span>
+        </div>
+        <div class="grid grid-cols-4 gap-1.5" id="hostTimerSelector">
+          <button type="button" class="host-timer-btn py-2 rounded-xl text-xs font-mono font-bold transition border border-white/10 bg-white/5 text-gray-400 hover:text-white" data-time="0">OFF</button>
+          <button type="button" class="host-timer-btn py-2 rounded-xl text-xs font-mono font-bold transition border border-white/10 bg-white/5 text-gray-400 hover:text-white" data-time="10">10s</button>
+          <button type="button" class="host-timer-btn active py-2 rounded-xl text-xs font-mono font-bold transition border border-cyan-500/50 bg-cyan-500/20 text-cyan-300 shadow-md shadow-cyan-500/20" data-time="15">15s</button>
+          <button type="button" class="host-timer-btn py-2 rounded-xl text-xs font-mono font-bold transition border border-white/10 bg-white/5 text-gray-400 hover:text-white" data-time="20">20s</button>
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <button id="btnConfirmCreateRoom" class="w-full py-3.5 bg-gradient-to-r from-cyan-500 via-indigo-600 to-fuchsia-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-orbitron font-bold text-xs tracking-wider rounded-xl transition shadow-lg shadow-cyan-500/30 active:scale-95 flex items-center justify-center gap-2">
+        <i class="fa-solid fa-rocket"></i>
+        <span>CREATE ROOM &amp; GET SHARE LINK</span>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Join Room Prompt Modal -->
+  <div id="joinModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="glass-panel border border-fuchsia-500/30 rounded-3xl p-5 sm:p-7 max-w-md w-full shadow-2xl relative overflow-hidden transition-all duration-300">
+      
+      <!-- Glow Orbs -->
+      <div class="absolute -top-10 -right-10 w-28 h-28 bg-fuchsia-500/20 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="absolute -bottom-10 -left-10 w-28 h-28 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none"></div>
+
+      <!-- Close Button -->
+      <button id="btnJoinModalClose" class="absolute top-4 right-4 text-gray-400 hover:text-white p-2 rounded-xl hover:bg-white/10 transition text-sm" title="Close">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+
+      <!-- Modal Header -->
+      <div class="flex items-center space-x-3 mb-5">
+        <div class="w-11 h-11 rounded-2xl bg-fuchsia-500/20 border border-fuchsia-400/40 text-fuchsia-300 flex items-center justify-center text-xl shadow-lg">
+          <i class="fa-solid fa-satellite"></i>
+        </div>
+        <div>
+          <h3 class="font-orbitron font-extrabold text-base sm:text-lg text-white tracking-wide">
+            ENTER GRAVITY ORBIT
+          </h3>
+          <p class="text-[11px] text-fuchsia-300/70 font-mono">Joining Chamber: <span id="joinModalRoomCode" class="text-white font-bold select-all">------</span></p>
+        </div>
+      </div>
+
+      <!-- Callsign Input -->
+      <div class="mb-6">
+        <label for="joinCallsignInput" class="text-[10px] font-mono text-gray-300 uppercase tracking-wider block mb-1.5">
+          Enter Your Callsign (Player 2)
+        </label>
+        <div class="relative">
+          <input id="joinCallsignInput" type="text" maxlength="15" placeholder="e.g. Starbuck (default: Player 2)" class="w-full px-4 py-2.5 rounded-xl bg-black/50 border border-white/10 text-white font-orbitron font-bold text-sm focus:border-fuchsia-400 focus:outline-none placeholder:text-gray-600 placeholder:font-sans placeholder:font-normal">
+          <div class="absolute right-3 top-1/2 -translate-y-1/2 text-fuchsia-400 text-xs font-mono font-bold">O</div>
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <button id="btnConfirmJoinRoom" class="w-full py-3.5 bg-gradient-to-r from-fuchsia-600 via-indigo-600 to-cyan-500 hover:from-fuchsia-500 hover:to-indigo-500 text-white font-orbitron font-bold text-xs tracking-wider rounded-xl transition shadow-lg shadow-fuchsia-600/30 active:scale-95 flex items-center justify-center gap-2">
+        <i class="fa-solid fa-bolt"></i>
+        <span>CONNECT TO CHAMBER</span>
+      </button>
+
+    </div>
+  </div>
+
   <!-- Custom Alert Modal (Zero window.alert) -->
   <div id="customModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md hidden flex items-center justify-center p-4">
     <div class="glass-panel border border-white/20 rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl">
@@ -599,6 +736,17 @@
           default:
             this.playPop();
         }
+      }
+
+      playTick() {
+        // High-frequency subtle countdown tick
+        this.playTone(880, 'sine', 0.04, 0.12);
+      }
+
+      playTimeout() {
+        // Futuristic alarm / forfeit tone
+        this.playTone(220, 'sawtooth', 0.35, 0.25, 90);
+        setTimeout(() => this.playTone(160, 'sawtooth', 0.4, 0.25, 60), 100);
       }
     }
 
@@ -778,6 +926,45 @@
     let localWinner = null;
     let isAiTurn = false;
     let scores = { X: 0, O: 0 };
+
+    // Player Names & Move Timer State
+    let hostPlayerName = "Player 1";
+    let guestPlayerName = "Waiting...";
+    let turnTimerDuration = 15; // 0 = OFF, 10, 15, 20
+    let turnTimerRemaining = 15;
+    let turnTimerInterval = null;
+    let lastTickedSec = null;
+    let pendingJoinRoomCode = null;
+
+    function getSavedPlayerName() {
+      try {
+        return localStorage.getItem('ag_player_name') || '';
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function savePlayerName(name) {
+      if (!name) return;
+      try {
+        localStorage.setItem('ag_player_name', name.trim());
+      } catch (e) {}
+    }
+
+    function getSavedTimerDuration() {
+      try {
+        const val = localStorage.getItem('ag_timer_duration');
+        return val !== null ? parseInt(val, 10) : 15;
+      } catch (e) {
+        return 15;
+      }
+    }
+
+    function saveTimerDuration(duration) {
+      try {
+        localStorage.setItem('ag_timer_duration', duration);
+      } catch (e) {}
+    }
 
     // Standard winning patterns
     const WINNING_COMBOS = [
@@ -962,6 +1149,109 @@
       }
     });
 
+    /* ==========================================================
+       MOVE TIMER CONTROLLER (SYNCHRONIZED TURN COUNTDOWN)
+       ========================================================== */
+    function startTurnTimer() {
+      stopTurnTimer();
+      const badge = document.getElementById('turnTimerBadge');
+      const wrapper = document.getElementById('turnProgressWrapper');
+      const bar = document.getElementById('turnProgressBar');
+      const secondsEl = document.getElementById('timerSeconds');
+
+      // If timer is disabled, game is over, or multiplayer match is waiting for peer
+      if (turnTimerDuration <= 0 || localWinner || (isMultiplayer && (!activeConn || !activeConn.open))) {
+        if (badge) { badge.classList.add('hidden'); badge.classList.remove('flex'); }
+        if (wrapper) wrapper.classList.add('hidden');
+        return;
+      }
+
+      if (badge) {
+        badge.classList.remove('hidden');
+        badge.classList.add('flex');
+      }
+      if (wrapper) wrapper.classList.remove('hidden');
+
+      turnTimerRemaining = turnTimerDuration;
+      lastTickedSec = Math.ceil(turnTimerRemaining);
+      if (secondsEl) secondsEl.textContent = lastTickedSec;
+      if (bar) {
+        bar.style.width = '100%';
+        bar.className = 'h-full bg-gradient-to-r from-cyan-400 via-indigo-400 to-fuchsia-400 transition-all duration-100 ease-linear rounded-full';
+      }
+
+      const startTime = Date.now();
+      turnTimerInterval = setInterval(() => {
+        const elapsed = (Date.now() - startTime) / 1000;
+        turnTimerRemaining = Math.max(0, turnTimerDuration - elapsed);
+        const displaySec = Math.ceil(turnTimerRemaining);
+        if (secondsEl) secondsEl.textContent = displaySec;
+
+        const percent = Math.max(0, (turnTimerRemaining / turnTimerDuration) * 100);
+        if (bar) bar.style.width = `${percent}%`;
+
+        // Low Time Warning (<= 4.0 seconds)
+        if (turnTimerRemaining <= 4.0) {
+          if (bar) bar.className = 'h-full bg-gradient-to-r from-rose-500 to-amber-500 animate-pulse transition-all duration-100 ease-linear rounded-full';
+          if (displaySec !== lastTickedSec && displaySec > 0) {
+            sound.playTick();
+            lastTickedSec = displaySec;
+          }
+        }
+
+        // Countdown Expired: Forfeit Win Triggered
+        if (turnTimerRemaining <= 0) {
+          stopTurnTimer();
+          handleTurnTimeout();
+        }
+      }, 100);
+    }
+
+    function stopTurnTimer() {
+      if (turnTimerInterval) {
+        clearInterval(turnTimerInterval);
+        turnTimerInterval = null;
+      }
+      const badge = document.getElementById('turnTimerBadge');
+      const wrapper = document.getElementById('turnProgressWrapper');
+      if (turnTimerDuration <= 0) {
+        if (badge) { badge.classList.add('hidden'); badge.classList.remove('flex'); }
+        if (wrapper) wrapper.classList.add('hidden');
+      }
+    }
+
+    function handleTurnTimeout() {
+      if (localWinner) return;
+
+      const timedOutSymbol = localTurn;
+      const winnerSymbol = (timedOutSymbol === 'X' ? 'O' : 'X');
+      const timedOutName = (timedOutSymbol === 'X' ? hostPlayerName : guestPlayerName);
+      const winnerName = (winnerSymbol === 'X' ? hostPlayerName : guestPlayerName);
+
+      localWinner = { winner: winnerSymbol, combo: null, reason: 'timeout' };
+      scores[winnerSymbol]++;
+      scoreXSpan.textContent = scores.X;
+      scoreOSpan.textContent = scores.O;
+
+      sound.playTimeout();
+      renderBoard(localBoard, localTurn, localWinner);
+      showToast(`⏱ ${timedOutName} timed out! ${winnerName} wins by forfeit!`, 'warning');
+
+      // Transmit Forfeit to Peer
+      if (isMultiplayer && activeConn && activeConn.open) {
+        try {
+          activeConn.send({
+            type: 'TIMEOUT_FORFEIT',
+            loser: timedOutSymbol,
+            winner: winnerSymbol,
+            scores: scores
+          });
+        } catch (e) {
+          console.warn("Forfeit transmit error:", e);
+        }
+      }
+    }
+
     function renderBoard(board, turn, winnerInfo) {
       boardCells.forEach((cell, idx) => {
         const val = board[idx];
@@ -977,28 +1267,37 @@
         }
       });
 
-      // Update Turn Display
-      turnPlayerSpan.textContent = turn;
+      // Update Turn Display with actual personalized name
+      const activeTurnName = (turn === 'X' ? hostPlayerName : guestPlayerName);
+      turnPlayerSpan.textContent = `${activeTurnName} (${turn})`;
+
       if (turn === 'X') {
-        turnPlayerSpan.className = 'text-cyan-400 font-bold text-glow-cyan';
+        turnPlayerSpan.className = 'text-cyan-400 font-bold text-glow-cyan truncate';
         cardPlayerX.classList.add('glow-cyan', 'scale-[1.02]');
         cardPlayerO.classList.remove('glow-magenta', 'scale-[1.02]');
       } else {
-        turnPlayerSpan.className = 'text-fuchsia-400 font-bold text-glow-magenta';
+        turnPlayerSpan.className = 'text-fuchsia-400 font-bold text-glow-magenta truncate';
         cardPlayerO.classList.add('glow-magenta', 'scale-[1.02]');
         cardPlayerX.classList.remove('glow-cyan', 'scale-[1.02]');
       }
 
       // Check Outcome
       if (winnerInfo) {
+        stopTurnTimer();
         if (winnerInfo.winner === 'DRAW') {
           hudStatusDetail.textContent = "STALEMATE: GRAVITATIONAL DRAW";
           turnPlayerSpan.textContent = "DRAW";
           turnPlayerSpan.className = 'text-amber-400 font-bold';
         } else {
-          hudStatusDetail.textContent = `VICTORY: PLAYER ${winnerInfo.winner} TRIUMPHS!`;
-          turnPlayerSpan.textContent = `${winnerInfo.winner} WON`;
-          drawWinningLaser(winnerInfo.combo);
+          const victorName = (winnerInfo.winner === 'X' ? hostPlayerName : guestPlayerName);
+          if (winnerInfo.reason === 'timeout') {
+            hudStatusDetail.textContent = `TIMEOUT: ${victorName.toUpperCase()} WINS BY FORFEIT!`;
+            turnPlayerSpan.textContent = `${victorName} WON (TIMEOUT)`;
+          } else {
+            hudStatusDetail.textContent = `VICTORY: ${victorName.toUpperCase()} TRIUMPHS!`;
+            turnPlayerSpan.textContent = `${victorName} WON`;
+            drawWinningLaser(winnerInfo.combo);
+          }
         }
         btnRematch.classList.remove('hidden');
       } else {
@@ -1007,17 +1306,21 @@
         if (isMultiplayer) {
           if (!activeConn || !activeConn.open) {
             hudStatusDetail.textContent = isHost ? "Waiting for Player 2 to join..." : "Connecting to Host chamber...";
+            stopTurnTimer();
           } else {
             const isMyTurn = (playerSymbol === turn);
-            hudStatusDetail.textContent = isMyTurn ? "Your Quantum Turn!" : "Opponent's Move...";
+            hudStatusDetail.textContent = isMyTurn ? `Your Turn, ${isHost ? hostPlayerName : guestPlayerName}!` : `${isHost ? guestPlayerName : hostPlayerName}'s Move...`;
+            startTurnTimer();
           }
         } else {
-          hudStatusDetail.textContent = (turn === 'X') ? "Your Move (X)" : "AI Calculating Trajectory...";
+          hudStatusDetail.textContent = (turn === 'X') ? `Your Move, ${hostPlayerName}!` : "AI Calculating Trajectory...";
+          startTurnTimer();
         }
       }
     }
 
     function disconnectP2P() {
+      stopTurnTimer();
       if (activeConn) {
         try { activeConn.close(); } catch (e) {}
         activeConn = null;
@@ -1049,9 +1352,12 @@
 
       hudRoomBadge.textContent = roomId;
       btnCopyInvite.classList.remove('hidden');
-      p1NameLabel.textContent = "You (Host)";
-      p2NameLabel.textContent = "Waiting...";
-      p1RoleLabel.textContent = "You are X";
+
+      hostPlayerName = hostPlayerName || getSavedPlayerName() || "Player 1";
+      guestPlayerName = "Waiting...";
+      p1NameLabel.textContent = hostPlayerName + " (You)";
+      p2NameLabel.textContent = guestPlayerName;
+      p1RoleLabel.textContent = "Commander (X)";
       p2RoleLabel.textContent = "Player 2 is O";
 
       updateNetworkStatus('waiting', 'HOSTING ROOM');
@@ -1121,10 +1427,14 @@
 
       hudRoomBadge.textContent = roomId;
       btnCopyInvite.classList.remove('hidden');
-      p1NameLabel.textContent = "Host (X)";
-      p2NameLabel.textContent = "You (O)";
-      p1RoleLabel.textContent = "Player 1";
-      p2RoleLabel.textContent = "You are O";
+
+      guestPlayerName = guestPlayerName || getSavedPlayerName() || "Player 2";
+      hostPlayerName = "Host";
+
+      p1NameLabel.textContent = hostPlayerName + " (X)";
+      p2NameLabel.textContent = guestPlayerName + " (You)";
+      p1RoleLabel.textContent = "Host (X)";
+      p2RoleLabel.textContent = "Commander (O)";
 
       updateNetworkStatus('waiting', 'CONNECTING...');
       setUrlRoomQuery(roomId);
@@ -1169,23 +1479,15 @@
         sound.playPop();
 
         if (isHost) {
-          p2NameLabel.textContent = "Player 2 (Online)";
-          showToast("Player 2 connected! Match begins.", "info");
-          closeShareModal();
-          // Synchronize initial state to guest
-          conn.send({
-            type: 'INIT_STATE',
-            board: localBoard,
-            turn: localTurn,
-            scores: scores
-          });
+          // Host waits for guest's GUEST_READY message to know guest callsign
         } else {
-          p1NameLabel.textContent = "Host (Online)";
-          showToast("Connected to host chamber!", "info");
-          conn.send({ type: 'GUEST_READY' });
+          p1NameLabel.textContent = hostPlayerName + " (Online)";
+          showToast("Connected to host chamber! Transmitting callsign...", "info");
+          conn.send({
+            type: 'GUEST_READY',
+            name: guestPlayerName
+          });
         }
-
-        renderBoard(localBoard, localTurn, localWinner);
       });
 
       conn.on('data', (data) => {
@@ -1195,6 +1497,7 @@
       conn.on('close', () => {
         updateNetworkStatus('waiting', 'OPPONENT LEFT');
         showToast("Opponent disconnected from orbit.", "warning");
+        stopTurnTimer();
         if (isHost) {
           p2NameLabel.textContent = "Disconnected";
         } else {
@@ -1212,16 +1515,54 @@
       if (!data || !data.type) return;
 
       switch (data.type) {
+        case 'GUEST_READY':
+          if (isHost) {
+            guestPlayerName = data.name || "Player 2";
+            p1NameLabel.textContent = hostPlayerName + " (You)";
+            p2NameLabel.textContent = guestPlayerName;
+            p2RoleLabel.textContent = "Opponent (O)";
+            showToast(`${guestPlayerName} entered orbit! Match begins.`, "info");
+            closeShareModal();
+
+            // Synchronize state, names and timer duration to guest
+            if (activeConn && activeConn.open) {
+              activeConn.send({
+                type: 'INIT_STATE',
+                board: localBoard,
+                turn: localTurn,
+                scores: scores,
+                hostName: hostPlayerName,
+                guestName: guestPlayerName,
+                timerDuration: turnTimerDuration
+              });
+            }
+
+            renderBoard(localBoard, localTurn, localWinner);
+          }
+          break;
+
         case 'INIT_STATE':
           localBoard = data.board || Array(9).fill(null);
           localTurn = data.turn || 'X';
           scores = data.scores || { X: 0, O: 0 };
           scoreXSpan.textContent = scores.X;
           scoreOSpan.textContent = scores.O;
+
+          if (data.hostName) hostPlayerName = data.hostName;
+          if (data.guestName) guestPlayerName = data.guestName;
+          if (data.timerDuration !== undefined) turnTimerDuration = data.timerDuration;
+
+          p1NameLabel.textContent = hostPlayerName;
+          p1RoleLabel.textContent = "Host (X)";
+          p2NameLabel.textContent = guestPlayerName + " (You)";
+          p2RoleLabel.textContent = "Commander (O)";
+
+          showToast(`Connected to ${hostPlayerName}'s match!`, "info");
           renderBoard(localBoard, localTurn, null);
           break;
 
         case 'MOVE':
+          stopTurnTimer();
           localBoard = data.board;
           localTurn = data.turn;
           localWinner = data.winner;
@@ -1238,6 +1579,19 @@
           }
 
           renderBoard(localBoard, localTurn, localWinner);
+          break;
+
+        case 'TIMEOUT_FORFEIT':
+          stopTurnTimer();
+          localWinner = { winner: data.winner, combo: null, reason: 'timeout' };
+          scores = data.scores || scores;
+          scoreXSpan.textContent = scores.X;
+          scoreOSpan.textContent = scores.O;
+          sound.playTimeout();
+          renderBoard(localBoard, localTurn, localWinner);
+          const timedOutUser = (data.loser === 'X' ? hostPlayerName : guestPlayerName);
+          const victorUser = (data.winner === 'X' ? hostPlayerName : guestPlayerName);
+          showToast(`⏱ ${timedOutUser} timed out! ${victorUser} wins by forfeit!`, 'warning');
           break;
 
         case 'REMATCH':
@@ -1274,8 +1628,12 @@
       hudRoomBadge.textContent = 'AI ARENA';
       btnCopyInvite.classList.add('hidden');
 
-      p1NameLabel.textContent = "Commander (You)";
-      p2NameLabel.textContent = "Minimax Neural Core";
+      hostPlayerName = getSavedPlayerName() || "Commander";
+      guestPlayerName = "Minimax AI";
+      turnTimerDuration = getSavedTimerDuration();
+
+      p1NameLabel.textContent = hostPlayerName + " (You)";
+      p2NameLabel.textContent = guestPlayerName;
       p1RoleLabel.textContent = "You are X";
       p2RoleLabel.textContent = "AI is O";
       scores = { X: 0, O: 0 };
@@ -1657,7 +2015,107 @@
 
 
     /* ==========================================================
-       7. EVENT LISTENERS & BOOTSTRAP
+       7. HOST SETUP MODAL & JOIN PROMPT CONTROLLER
+       ========================================================== */
+    const hostSetupModal = document.getElementById('hostSetupModal');
+    const joinModal = document.getElementById('joinModal');
+    const hostCallsignInput = document.getElementById('hostCallsignInput');
+    const joinCallsignInput = document.getElementById('joinCallsignInput');
+    const joinModalRoomCode = document.getElementById('joinModalRoomCode');
+    const inputLobbyCallsign = document.getElementById('inputLobbyCallsign');
+
+    function setHostTimerSelection(duration) {
+      turnTimerDuration = duration;
+      const buttons = document.querySelectorAll('.host-timer-btn');
+      buttons.forEach(btn => {
+        const btnTime = parseInt(btn.getAttribute('data-time'), 10);
+        if (btnTime === duration) {
+          btn.className = "host-timer-btn active py-2 rounded-xl text-xs font-mono font-bold transition border border-cyan-500/50 bg-cyan-500/20 text-cyan-300 shadow-md shadow-cyan-500/20";
+        } else {
+          btn.className = "host-timer-btn py-2 rounded-xl text-xs font-mono font-bold transition border border-white/10 bg-white/5 text-gray-400 hover:text-white";
+        }
+      });
+    }
+
+    function openHostSetupModal() {
+      sound.playPop();
+      const savedName = getSavedPlayerName();
+      if (hostCallsignInput) {
+        hostCallsignInput.value = savedName || '';
+      }
+      const savedDuration = getSavedTimerDuration();
+      setHostTimerSelection(savedDuration);
+
+      if (hostSetupModal) {
+        hostSetupModal.classList.remove('hidden');
+        setTimeout(() => {
+          if (hostCallsignInput) hostCallsignInput.focus();
+        }, 100);
+      }
+    }
+
+    function closeHostSetupModal() {
+      if (hostSetupModal) hostSetupModal.classList.add('hidden');
+    }
+
+    function confirmCreateRoom() {
+      sound.playPop();
+      let name = hostCallsignInput ? hostCallsignInput.value.trim() : '';
+      if (!name) name = "Player 1";
+      savePlayerName(name);
+      saveTimerDuration(turnTimerDuration);
+      hostPlayerName = name;
+
+      if (inputLobbyCallsign) inputLobbyCallsign.value = name;
+
+      closeHostSetupModal();
+      const newRoom = generateRoomCode();
+      initP2PHost(newRoom);
+    }
+
+    function openJoinModal(roomCode) {
+      sound.playPop();
+      pendingJoinRoomCode = roomCode;
+      if (joinModalRoomCode) joinModalRoomCode.textContent = roomCode;
+      const savedName = getSavedPlayerName();
+      if (joinCallsignInput) {
+        joinCallsignInput.value = savedName || '';
+      }
+      if (joinModal) {
+        joinModal.classList.remove('hidden');
+        setTimeout(() => {
+          if (joinCallsignInput) joinCallsignInput.focus();
+        }, 100);
+      }
+    }
+
+    function closeJoinModal() {
+      if (joinModal) joinModal.classList.add('hidden');
+      pendingJoinRoomCode = null;
+    }
+
+    function confirmJoinRoom() {
+      sound.playPop();
+      let name = joinCallsignInput ? joinCallsignInput.value.trim() : '';
+      if (!name) name = "Player 2";
+      savePlayerName(name);
+      guestPlayerName = name;
+
+      if (inputLobbyCallsign) inputLobbyCallsign.value = name;
+
+      const codeToJoin = pendingJoinRoomCode || (inputRoomCode ? inputRoomCode.value.trim().toUpperCase() : '');
+      closeJoinModal();
+
+      if (!codeToJoin || codeToJoin.length < 3) {
+        showToast("Enter a valid Room Code", "warning");
+        return;
+      }
+      initP2PGuest(codeToJoin);
+    }
+
+
+    /* ==========================================================
+       8. EVENT LISTENERS & BOOTSTRAP
        ========================================================== */
     // Board cell clicks
     boardCells.forEach(cell => {
@@ -1675,14 +2133,10 @@
       });
     });
 
-    // Host Room
-    btnCreateRoom.addEventListener('click', () => {
-      sound.playPop();
-      const newRoom = generateRoomCode();
-      initP2PHost(newRoom);
-    });
+    // Host Room -> Open Setup Modal
+    btnCreateRoom.addEventListener('click', openHostSetupModal);
 
-    // Join Room
+    // Join Room -> Open Callsign Confirmation Modal
     btnJoinRoom.addEventListener('click', () => {
       sound.playPop();
       const code = inputRoomCode.value.trim().toUpperCase();
@@ -1690,7 +2144,7 @@
         showToast("Enter a valid Room Code", "warning");
         return;
       }
-      initP2PGuest(code);
+      openJoinModal(code);
     });
 
     // Enter key inside room input
@@ -1715,6 +2169,70 @@
       sound.playPop();
       switchView('lobby');
     });
+
+    // Host Setup Modal Controls
+    const btnHostModalClose = document.getElementById('btnHostModalClose');
+    if (btnHostModalClose) btnHostModalClose.addEventListener('click', closeHostSetupModal);
+
+    const btnConfirmCreateRoom = document.getElementById('btnConfirmCreateRoom');
+    if (btnConfirmCreateRoom) btnConfirmCreateRoom.addEventListener('click', confirmCreateRoom);
+
+    if (hostCallsignInput) {
+      hostCallsignInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') confirmCreateRoom();
+      });
+    }
+
+    if (hostSetupModal) {
+      hostSetupModal.addEventListener('click', (e) => {
+        if (e.target.id === 'hostSetupModal') closeHostSetupModal();
+      });
+    }
+
+    // Host Timer Selector Buttons
+    document.querySelectorAll('.host-timer-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        sound.playPop();
+        const duration = parseInt(btn.getAttribute('data-time'), 10);
+        setHostTimerSelection(duration);
+        saveTimerDuration(duration);
+      });
+    });
+
+    // Join Modal Controls
+    const btnJoinModalClose = document.getElementById('btnJoinModalClose');
+    if (btnJoinModalClose) btnJoinModalClose.addEventListener('click', closeJoinModal);
+
+    const btnConfirmJoinRoom = document.getElementById('btnConfirmJoinRoom');
+    if (btnConfirmJoinRoom) btnConfirmJoinRoom.addEventListener('click', confirmJoinRoom);
+
+    if (joinCallsignInput) {
+      joinCallsignInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') confirmJoinRoom();
+      });
+    }
+
+    if (joinModal) {
+      joinModal.addEventListener('click', (e) => {
+        if (e.target.id === 'joinModal') closeJoinModal();
+      });
+    }
+
+    // Lobby Callsign Profile Input
+    if (inputLobbyCallsign) {
+      const initialCallsign = getSavedPlayerName();
+      if (initialCallsign) {
+        inputLobbyCallsign.value = initialCallsign;
+        hostPlayerName = initialCallsign;
+      }
+      inputLobbyCallsign.addEventListener('input', () => {
+        const val = inputLobbyCallsign.value.trim();
+        if (val) {
+          savePlayerName(val);
+          hostPlayerName = val;
+        }
+      });
+    }
 
     // Share & Invite Modal Triggers & Controls
     btnCopyInvite.addEventListener('click', openShareModal);
@@ -1770,16 +2288,16 @@
       soundLabel.textContent = "SFX: OFF";
     }
 
-    // Auto-Join Support: Bypasses home screen and connects straight into game room
+    // Auto-Join Support: When invited with ?room=CODE, opens Join Modal prompting for callsign
     (function checkUrlQuery() {
       try {
         const params = new URLSearchParams(window.location.search);
         const queryRoom = params.get('room');
         if (queryRoom && queryRoom.trim().length >= 3) {
           const cleanCode = queryRoom.trim().toUpperCase();
-          inputRoomCode.value = cleanCode;
-          showToast(`Auto-joining chamber ${cleanCode}...`, "info");
-          initP2PGuest(cleanCode);
+          if (inputRoomCode) inputRoomCode.value = cleanCode;
+          showToast(`Invited to Chamber ${cleanCode}! Confirm callsign to join.`, "info");
+          openJoinModal(cleanCode);
         }
       } catch (e) {
         console.warn("URL query auto-join error:", e);
