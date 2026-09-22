@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Antigravity Tic-Tac-Toe | Cosmic P2P Multiplayer & AI</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- PeerJS CDN for Serverless P2P WebRTC Multiplayer with Fallback -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script>
+    if (typeof Peer === 'undefined') {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"><\/script>');
+    }
+  </script>
+
+  <!-- Google Fonts: Orbitron & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #05050f;
+      color: #e2e8f0;
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .font-orbitron {
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    /* Antigravity Floating Keyframes */
+    @keyframes floatOrb {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-14px) rotate(2deg); }
+    }
+    @keyframes floatSlow {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(12px, -24px); }
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.35; filter: blur(35px); }
+      50% { opacity: 0.7; filter: blur(50px); }
+    }
+
+    .antigravity-float {
+      animation: floatOrb 6s ease-in-out infinite;
+    }
+    .antigravity-orb-1 {
+      animation: floatSlow 14s ease-in-out infinite alternate;
+    }
+    .antigravity-orb-2 {
+      animation: floatSlow 18s ease-in-out infinite alternate-reverse;
+    }
+
+    /* Glow Tokens */
+    .glow-cyan {
+      box-shadow: 0 0 25px rgba(6, 182, 212, 0.45);
+      border-color: rgba(34, 211, 238, 0.8) !important;
+    }
+    .glow-magenta {
+      box-shadow: 0 0 25px rgba(236, 72, 153, 0.45);
+      border-color: rgba(244, 114, 182, 0.8) !important;
+    }
+    .text-glow-cyan {
+      text-shadow: 0 0 16px rgba(34, 211, 238, 0.8), 0 0 30px rgba(6, 182, 212, 0.5);
+    }
+    .text-glow-magenta {
+      text-shadow: 0 0 16px rgba(244, 114, 182, 0.8), 0 0 30px rgba(236, 72, 153, 0.5);
+    }
+
+    /* Glassmorphic UI Surfaces */
+    .glass-panel {
+      background: rgba(13, 16, 35, 0.68);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-tile {
+      background: rgba(19, 24, 52, 0.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+      touch-action: manipulation;
+    }
+    .glass-tile:hover:not(:disabled) {
+      background: rgba(33, 41, 88, 0.75);
+      transform: translateY(-3px) scale(1.02);
+      border-color: rgba(99, 102, 241, 0.6);
+      box-shadow: 0 8px 24px -4px rgba(99, 102, 241, 0.35);
+    }
+    .glass-tile:active:not(:disabled) {
+      transform: translateY(0px) scale(0.98);
+    }
+
+    /* Hide scrollbars */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="relative min-h-screen w-full flex flex-col justify-between overflow-x-hidden selection:bg-cyan-500 selection:text-white">
+
+  <!-- Interactive Antigravity Particle Background -->
+  <canvas id="gravityCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
+
+  <!-- Cosmic Ambient Gradients -->
+  <div class="fixed top-[-10%] left-[-10%] w-[55vw] h-[55vw] rounded-full bg-cyan-600/15 pointer-events-none antigravity-orb-1 blur-[110px] z-0"></div>
+  <div class="fixed bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-fuchsia-600/15 pointer-events-none antigravity-orb-2 blur-[120px] z-0"></div>
+  <div class="fixed top-[35%] right-[25%] w-[35vw] h-[35vw] rounded-full bg-indigo-600/10 pointer-events-none blur-[100px] z-0"></div>
+
+  <!-- Header Navigation -->
+  <header class="relative z-10 w-full px-4 sm:px-8 py-3.5 flex items-center justify-between border-b border-white/5 backdrop-blur-md bg-black/25">
+    <div class="flex items-center space-x-3 cursor-pointer" onclick="switchView('lobby')">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-cyan-500/25">
+        <i class="fa-solid fa-atom text-white text-xl animate-spin" style="animation-duration: 12s;"></i>
+      </div>
+      <div>
+        <h1 class="font-orbitron font-extrabold text-base sm:text-xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-300 to-fuchsia-400">
+          ANTIGRAVITY
+        </h1>
+        <p class="text-[10px] tracking-widest text-cyan-300/70 font-mono uppercase -mt-0.5">P2P Tic-Tac-Toe &bull; Zero-G</p>
+      </div>
+    </div>
+
+    <!-- Controls & Status Badge -->
+    <div class="flex items-center space-x-2.5">
+      <!-- SFX Toggle -->
+      <button id="soundToggleBtn" class="px-3 py-2 rounded-xl glass-panel text-gray-300 hover:text-white transition flex items-center gap-1.5 text-xs font-semibold hover:border-cyan-400/40" title="Toggle Synthesized Audio">
+        <i class="fa-solid fa-volume-high text-cyan-400" id="soundIcon"></i>
+        <span class="hidden sm:inline" id="soundLabel">SFX: ON</span>
+      </button>
+
+      <!-- P2P Live Network Badge -->
+      <div id="connBadge" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono border border-cyan-500/30 bg-cyan-500/10 text-cyan-300">
+        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" id="connIndicatorDot"></span>
+        <span id="connStatusText">P2P READY</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Game & Lobby Container -->
+  <main class="relative z-10 container mx-auto px-4 py-5 max-w-4xl flex-grow flex items-center justify-center">
+
+    <!-- VIEW 1: LOBBY -->
+    <section id="lobbyView" class="w-full max-w-xl transition-all duration-300">
+      <div class="glass-panel rounded-3xl p-6 sm:p-9 shadow-2xl relative overflow-hidden border border-white/10 antigravity-float">
+        
+        <!-- Glow Orbs -->
+        <div class="absolute -top-12 -right-12 w-32 h-32 bg-cyan-500/20 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="absolute -bottom-12 -left-12 w-32 h-32 bg-fuchsia-500/20 rounded-full blur-2xl pointer-events-none"></div>
+
+        <div class="text-center mb-7">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-semibold mb-3">
+            <i class="fa-solid fa-network-wired text-xs text-cyan-400"></i> Serverless WebRTC P2P
+          </div>
+          <h2 class="text-2xl sm:text-3xl md:text-4xl font-orbitron font-extrabold tracking-wide text-white mb-2">
+            GRAVITY CHAMBER
+          </h2>
+          <p class="text-gray-400 text-xs sm:text-sm max-w-md mx-auto">
+            Connect instantly with a friend via shareable P2P link, or test your wits against our unbeatable Minimax AI.
+          </p>
+        </div>
+
+        <!-- Mode Selectors -->
+        <div class="space-y-4">
+          <!-- 1. Create Private Room (P2P Host) -->
+          <button id="btnCreateRoom" class="w-full group relative overflow-hidden rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-cyan-600/30 via-indigo-600/30 to-fuchsia-600/30 border border-white/15 hover:border-cyan-400/80 transition-all duration-300 flex items-center justify-between shadow-lg hover:shadow-cyan-500/25 active:scale-[0.99]">
+            <div class="flex items-center space-x-4">
+              <div class="w-12 h-12 rounded-xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-400 text-xl group-hover:scale-110 transition-transform">
+                <i class="fa-solid fa-gamepad"></i>
+              </div>
+              <div class="text-left">
+                <div class="font-orbitron font-bold text-white text-base sm:text-lg flex items-center gap-2">
+                  Create Private Room
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-400/20 text-cyan-300 border border-cyan-400/30 font-mono">P2P Host</span>
+                </div>
+                <div class="text-xs text-gray-400">Generate a shareable WebRTC room link for a friend</div>
+              </div>
+            </div>
+            <i class="fa-solid fa-chevron-right text-gray-400 group-hover:text-cyan-300 group-hover:translate-x-1 transition-all"></i>
+          </button>
+
+          <!-- 2. Join via Room Code -->
+          <div class="rounded-2xl p-4 sm:p-5 glass-panel border border-white/10 hover:border-indigo-400/50 transition-all">
+            <div class="flex items-center gap-2 mb-3 text-sm font-semibold text-gray-300">
+              <i class="fa-solid fa-door-open text-indigo-400"></i> Join via Room Code
+            </div>
+            <div class="flex gap-2">
+              <input id="inputRoomCode" type="text" maxlength="8" placeholder="ENTER ROOM CODE" class="uppercase flex-grow px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none font-mono text-center tracking-widest text-cyan-300 placeholder:text-gray-600 text-sm">
+              <button id="btnJoinRoom" class="px-5 sm:px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-orbitron font-bold text-xs tracking-wider transition shadow-lg shadow-indigo-600/30 active:scale-95">
+                JOIN
+              </button>
+            </div>
+          </div>
+
+          <!-- Divider -->
+          <div class="flex items-center my-3">
+            <div class="flex-grow border-t border-white/10"></div>
+            <span class="px-3 text-xs text-gray-500 font-mono uppercase tracking-widest">or fallback solo</span>
+            <div class="flex-grow border-t border-white/10"></div>
+          </div>
+
+          <!-- 3. Solo Mode vs AI -->
+          <div class="rounded-2xl p-4 sm:p-5 glass-panel border border-white/10 hover:border-fuchsia-400/70 transition-all duration-300 flex flex-col sm:flex-row items-center justify-between gap-3 hover:shadow-fuchsia-500/20">
+            <div class="flex items-center space-x-4 w-full sm:w-auto">
+              <div class="w-12 h-12 rounded-xl bg-fuchsia-500/20 border border-fuchsia-400/40 flex items-center justify-center text-fuchsia-400 text-xl">
+                <i class="fa-solid fa-brain"></i>
+              </div>
+              <div class="text-left">
+                <div class="font-orbitron font-bold text-white text-base sm:text-lg flex items-center gap-2">
+                  Play vs Minimax AI
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-fuchsia-400/20 text-fuchsia-300 border border-fuchsia-400/30 font-mono">Solo</span>
+                </div>
+                <div class="text-xs text-gray-400">Zero-latency offline battle with mathematical AI</div>
+              </div>
+            </div>
+            <button id="btnPlayAi" class="w-full sm:w-auto px-5 py-3 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-orbitron font-bold text-xs tracking-wider transition shadow-lg shadow-fuchsia-600/30 active:scale-95 flex items-center justify-center gap-2">
+              <span>BATTLE</span>
+              <i class="fa-solid fa-bolt"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tech Badges Footer in Lobby -->
+        <div class="mt-6 pt-4 border-t border-white/5 grid grid-cols-3 gap-2 text-center text-[10px] font-mono text-gray-400">
+          <div><i class="fa-solid fa-bolt text-cyan-400 mr-1"></i> PeerJS P2P</div>
+          <div><i class="fa-solid fa-wave-square text-indigo-400 mr-1"></i> Web Audio</div>
+          <div><i class="fa-solid fa-microchip text-fuchsia-400 mr-1"></i> Minimax AI</div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- VIEW 2: GAME ARENA -->
+    <section id="gameView" class="hidden w-full max-w-xl flex flex-col items-center gap-4 transition-all duration-300">
+      
+      <!-- Top HUD Bar -->
+      <div class="w-full glass-panel rounded-2xl px-4 py-2.5 sm:px-5 flex flex-wrap items-center justify-between gap-2.5 border border-white/10">
+        <!-- Room Tag & Share Button -->
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono text-gray-400 uppercase">Room:</span>
+          <span id="hudRoomBadge" class="font-mono text-cyan-300 font-bold bg-cyan-950/70 border border-cyan-700/60 px-2.5 py-0.5 rounded-lg text-xs tracking-wider select-all">SOLO</span>
+          <button id="btnCopyInvite" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/15 text-xs text-cyan-300 hover:text-white transition flex items-center gap-1.5 active:scale-95" title="Copy Invite Link">
+            <i class="fa-solid fa-share-nodes"></i>
+            <span id="btnCopyLabel">Share Link</span>
+          </button>
+        </div>
+
+        <!-- Mode/Turn Indicator Status -->
+        <div id="gameStatusIndicator" class="flex items-center gap-2 text-xs font-semibold text-indigo-300">
+          <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" id="statusPulseDot"></span>
+          <span id="hudStatusDetail">Initial Orbit...</span>
+        </div>
+
+        <!-- Leave Room Button -->
+        <button id="btnExitGame" class="px-3 py-1 rounded-lg text-xs font-semibold text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition flex items-center gap-1">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          <span>Exit</span>
+        </button>
+      </div>
+
+      <!-- Player Vs Cards -->
+      <div class="w-full grid grid-cols-2 gap-2.5 sm:gap-4">
+        <!-- Player X Card -->
+        <div id="cardPlayerX" class="glass-panel rounded-2xl p-3 sm:p-4 flex items-center justify-between border-2 border-cyan-500/50 relative overflow-hidden transition-all duration-300">
+          <div class="flex items-center space-x-2.5 sm:space-x-3 overflow-hidden">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-cyan-500/20 border border-cyan-400/50 flex items-center justify-center font-orbitron font-extrabold text-cyan-400 text-lg sm:text-xl shadow-lg">
+              X
+            </div>
+            <div class="truncate">
+              <div class="text-[11px] text-gray-400 font-mono truncate" id="p1RoleLabel">You (Host)</div>
+              <div class="font-orbitron font-bold text-xs sm:text-sm text-cyan-300 truncate" id="p1NameLabel">Player 1</div>
+            </div>
+          </div>
+          <div class="text-right shrink-0 pl-2">
+            <span class="text-[10px] text-gray-400 block uppercase font-mono">Wins</span>
+            <span class="text-lg sm:text-2xl font-orbitron font-black text-cyan-400" id="scoreX">0</span>
+          </div>
+        </div>
+
+        <!-- Player O Card -->
+        <div id="cardPlayerO" class="glass-panel rounded-2xl p-3 sm:p-4 flex items-center justify-between border-2 border-white/5 relative overflow-hidden transition-all duration-300">
+          <div class="flex items-center space-x-2.5 sm:space-x-3 overflow-hidden">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-fuchsia-500/20 border border-fuchsia-400/50 flex items-center justify-center font-orbitron font-extrabold text-fuchsia-400 text-lg sm:text-xl shadow-lg">
+              O
+            </div>
+            <div class="truncate">
+              <div class="text-[11px] text-gray-400 font-mono truncate" id="p2RoleLabel">Opponent</div>
+              <div class="font-orbitron font-bold text-xs sm:text-sm text-fuchsia-300 truncate" id="p2NameLabel">Waiting...</div>
+            </div>
+          </div>
+          <div class="text-right shrink-0 pl-2">
+            <span class="text-[10px] text-gray-400 block uppercase font-mono">Wins</span>
+            <span class="text-lg sm:text-2xl font-orbitron font-black text-fuchsia-400" id="scoreO">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Turn Announcement Ribbon -->
+      <div id="turnBanner" class="w-full text-center py-2 px-4 rounded-xl bg-white/5 border border-white/10 font-orbitron text-xs sm:text-sm font-semibold tracking-wider text-gray-200 flex items-center justify-center gap-2">
+        <span>CURRENT TURN:</span>
+        <span id="turnPlayerSpan" class="text-cyan-400 font-bold text-glow-cyan">X</span>
+      </div>
+
+      <!-- 3x3 Antigravity Game Board -->
+      <div class="relative w-full max-w-[340px] sm:max-w-[400px] aspect-square p-3 sm:p-4 glass-panel rounded-3xl border border-white/10 shadow-2xl flex flex-col justify-center items-center">
+        <!-- Laser Victory Line Overlay -->
+        <svg id="winningLineSvg" class="absolute inset-0 w-full h-full pointer-events-none z-20 hidden">
+          <line id="winLine" x1="0" y1="0" x2="0" y2="0" stroke="url(#winGradient)" stroke-width="8" stroke-linecap="round" filter="drop-shadow(0 0 10px #22d3ee) drop-shadow(0 0 20px #f472b6)" />
+          <defs>
+            <linearGradient id="winGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#22d3ee" />
+              <stop offset="100%" stop-color="#f472b6" />
+            </linearGradient>
+          </defs>
+        </svg>
+
+        <!-- Grid of 9 cells -->
+        <div id="boardGrid" class="grid grid-cols-3 grid-rows-3 gap-2.5 sm:gap-3.5 w-full h-full">
+          <button data-index="0" class="board-cell glass-tile rounded-2xl flex items-center justify-center font-orbitron font-black text-4xl sm:text-5xl select-none outline-none"></button>
+          <button data-index="1" class="board-cell glass-tile rounded-2xl flex items-center justify-center font-orbitron font-black text-4xl sm:text-5xl select-none outline-none"></button>
+          <button data-index="2" class="board-cell glass-tile rounded-2xl flex items-center justify-center font-orbitron font-black text-4xl sm:text-5xl select-none outline-none"></button>
+          <button data-index="3" class="board-cell glass-tile rounded-2xl flex items-center justify-center font-orbitron font-black text-4xl sm:text-5xl select-none outline-none"></button>
+          <button data-index="4" class="board-cell glass-tile rounded-2xl flex items-center justify-center font-orbitron font-black text-4xl sm:text-5xl select-none outline-none"></button>
+          <button data-index="5" class="board-cell glass-tile rounded-2xl flex items-center justify-center font-orbitron font-black text-4xl sm:text-5xl select-none outline-none"></button>
+          <button data-index="6" class="board-cell glass-tile rounded-2xl flex items-center justify-center font-orbitron font-black text-4xl sm:text-5xl select-none outline-none"></button>
+          <button data-index="7" class="board-cell glass-tile rounded-2xl flex items-center justify-center font-orbitron font-black text-4xl sm:text-5xl select-none outline-none"></button>
+          <button data-index="8" class="board-cell glass-tile rounded-2xl flex items-center justify-center font-orbitron font-black text-4xl sm:text-5xl select-none outline-none"></button>
+        </div>
+      </div>
+
+      <!-- Action Panel & Floating Reaction Emojis -->
+      <div class="w-full flex flex-col sm:flex-row items-center justify-between gap-2.5 glass-panel p-3 rounded-2xl border border-white/10">
+        <!-- Reaction Bar -->
+        <div class="flex items-center gap-1.5 sm:gap-2">
+          <span class="text-[11px] text-gray-400 font-mono mr-1">EMIT:</span>
+          <button class="reaction-btn px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-lg hover:scale-125 transition active:scale-90" data-emoji="🚀">🚀</button>
+          <button class="reaction-btn px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-lg hover:scale-125 transition active:scale-90" data-emoji="⚡">⚡</button>
+          <button class="reaction-btn px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-lg hover:scale-125 transition active:scale-90" data-emoji="👾">👾</button>
+          <button class="reaction-btn px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-lg hover:scale-125 transition active:scale-90" data-emoji="🔥">🔥</button>
+          <button class="reaction-btn px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-lg hover:scale-125 transition active:scale-90" data-emoji="💀">💀</button>
+        </div>
+
+        <!-- Rematch / Reset Board -->
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <button id="btnRematch" class="hidden px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-orbitron font-bold text-xs tracking-wider transition shadow-lg shadow-cyan-500/30 active:scale-95">
+            <i class="fa-solid fa-rotate-right mr-1.5"></i> REMATCH
+          </button>
+          <button id="btnResetBoard" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-gray-300 font-orbitron text-xs font-semibold transition active:scale-95">
+            <i class="fa-solid fa-arrows-rotate mr-1"></i> RESET
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Floating Emoji Reaction Container -->
+  <div id="reactionOverlay" class="fixed inset-0 pointer-events-none z-50 overflow-hidden"></div>
+
+  <!-- Non-blocking Floating Notification / Toast -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-50 flex flex-col gap-2 pointer-events-none max-w-xs"></div>
+
+  <!-- Custom Alert Modal (Zero window.alert) -->
+  <div id="customModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="glass-panel border border-white/20 rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl">
+      <div id="modalIconContainer" class="w-14 h-14 rounded-2xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 flex items-center justify-center mx-auto mb-4 text-2xl">
+        <i class="fa-solid fa-circle-info" id="modalIcon"></i>
+      </div>
+      <h3 id="modalTitle" class="font-orbitron font-bold text-lg text-white mb-2">Notification</h3>
+      <p id="modalMessage" class="text-xs sm:text-sm text-gray-300 mb-6 leading-relaxed whitespace-pre-line"></p>
+      <div class="flex gap-2" id="modalButtonsContainer">
+        <button id="modalCloseBtn" class="flex-grow py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-orbitron font-bold text-xs tracking-wider transition active:scale-95 shadow-lg shadow-cyan-500/30">
+          ACKNOWLEDGE
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="relative z-10 text-center py-3 text-[11px] text-gray-500 font-mono">
+    Antigravity Zero-G Realtime Engine &bull; Serverless PeerJS P2P &amp; Minimax AI
+  </footer>
+
+  <!-- ==================== SCRIPT ENGINE ==================== -->
+  <script>
+    /* ==========================================================
+       1. WEB AUDIO API SYNTHESIZER (ZERO EXTERNAL ASSETS)
+       ========================================================== */
+    class CosmicSoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+        try {
+          const saved = localStorage.getItem('ag_sfx_enabled');
+          if (saved !== null) this.enabled = (saved === 'true');
+        } catch (e) {}
+      }
+
+      initCtx() {
+        if (!this.ctx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) {
+            this.ctx = new AudioContextClass();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playTone(freq, type = 'sine', duration = 0.15, vol = 0.15, freqRamp = null) {
+        if (!this.enabled) return;
+        try {
+          this.initCtx();
+          if (!this.ctx) return;
+
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const now = this.ctx.currentTime;
+
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, now);
+          if (freqRamp) {
+            osc.frequency.exponentialRampToValueAtTime(Math.max(freqRamp, 10), now + duration);
+          }
+
+          gain.gain.setValueAtTime(vol, now);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + duration);
+        } catch (e) {
+          console.warn("Sound synth error:", e);
+        }
+      }
+
+      playXMove() {
+        // High-tech laser cyber blip (cyan)
+        this.playTone(520, 'triangle', 0.12, 0.22, 880);
+      }
+
+      playOMove() {
+        // Deep orbital resonant chime (magenta)
+        this.playTone(330, 'sine', 0.22, 0.25, 220);
+      }
+
+      playWin() {
+        // Triumphant ascending cosmic fanfare chords
+        const arpeggio = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+        arpeggio.forEach((freq, idx) => {
+          setTimeout(() => {
+            this.playTone(freq, 'triangle', 0.35, 0.22);
+          }, idx * 90);
+        });
+      }
+
+      playDraw() {
+        // Antigravity vortex power-down tone
+        this.playTone(320, 'sawtooth', 0.35, 0.15, 90);
+      }
+
+      playPop() {
+        this.playTone(720, 'sine', 0.08, 0.15, 950);
+      }
+
+      playEmoji(emoji) {
+        if (!this.enabled) return;
+        switch (emoji) {
+          case '🚀':
+            // Rocket thruster sweep up
+            this.playTone(180, 'sawtooth', 0.3, 0.2, 820);
+            break;
+          case '⚡':
+            // Electric zap (two quick bursts)
+            this.playTone(850, 'sawtooth', 0.06, 0.25);
+            setTimeout(() => this.playTone(1150, 'triangle', 0.08, 0.25), 60);
+            break;
+          case '👾':
+            // 8-bit arcade chirp
+            this.playTone(600, 'square', 0.05, 0.15);
+            setTimeout(() => this.playTone(800, 'square', 0.05, 0.15), 50);
+            setTimeout(() => this.playTone(1000, 'square', 0.08, 0.15), 100);
+            break;
+          case '🔥':
+            // Flare warm chord
+            this.playTone(440, 'triangle', 0.25, 0.2);
+            this.playTone(554.37, 'sine', 0.25, 0.18);
+            break;
+          case '💀':
+            // Sub-harmonic drop
+            this.playTone(120, 'sine', 0.35, 0.3, 45);
+            break;
+          default:
+            this.playPop();
+        }
+      }
+    }
+
+    const sound = new CosmicSoundEngine();
+
+    // User interaction unlock for Web Audio context
+    function unlockAudio() {
+      sound.initCtx();
+      document.removeEventListener('pointerdown', unlockAudio);
+    }
+    document.addEventListener('pointerdown', unlockAudio, { once: true });
+
+
+    /* ==========================================================
+       2. ANTIGRAVITY CURSOR-REPULSIVE PARTICLE CANVAS
+       ========================================================== */
+    const canvas = document.getElementById('gravityCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    const mouse = { x: null, y: null, radius: 130 };
+
+    function resizeCanvas() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      ctx.scale(dpr, dpr);
+      initParticles();
+    }
+
+    class Particle {
+      constructor() {
+        this.w = window.innerWidth;
+        this.h = window.innerHeight;
+        this.x = Math.random() * this.w;
+        this.y = Math.random() * this.h;
+        this.size = Math.random() * 2.2 + 0.6;
+        this.density = Math.random() * 20 + 8;
+        this.vx = (Math.random() - 0.5) * 0.4;
+        this.vy = (Math.random() - 0.5) * 0.3 - 0.22; // gentle upward low-G buoyancy
+        this.color = Math.random() > 0.5 ? '34, 211, 238' : '244, 114, 182'; // cyan or magenta
+        this.alpha = Math.random() * 0.55 + 0.25;
+      }
+
+      draw() {
+        ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      update() {
+        // Continuous float
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Subtle drag
+        this.vx *= 0.98;
+        this.vy *= 0.98;
+
+        // Natural buoyancy boost
+        if (Math.abs(this.vy) < 0.15) {
+          this.vy -= 0.05;
+        }
+
+        // Screen boundary wrap
+        if (this.y < -10) this.y = window.innerHeight + 10;
+        if (this.y > window.innerHeight + 10) this.y = -10;
+        if (this.x < -10) this.x = window.innerWidth + 10;
+        if (this.x > window.innerWidth + 10) this.x = -10;
+
+        // Repulsive antigravity cursor force
+        if (mouse.x !== null && mouse.y !== null) {
+          const dx = mouse.x - this.x;
+          const dy = mouse.y - this.y;
+          const dist = Math.hypot(dx, dy);
+
+          if (dist < mouse.radius && dist > 0) {
+            const forceDirectionX = dx / dist;
+            const forceDirectionY = dy / dist;
+            const force = (mouse.radius - dist) / mouse.radius;
+            const repulseX = forceDirectionX * force * this.density * 0.4;
+            const repulseY = forceDirectionY * force * this.density * 0.4;
+
+            this.x -= repulseX;
+            this.y -= repulseY;
+          }
+        }
+      }
+    }
+
+    function initParticles() {
+      particles = [];
+      // Calculate particle density based on screen area (smooth on mobile & desktop)
+      const count = Math.min(Math.floor((window.innerWidth * window.innerHeight) / 9000), 100);
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle());
+      }
+    }
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      // Connect close particles with faint cosmic filament lines
+      const pLen = particles.length;
+      for (let i = 0; i < pLen; i++) {
+        for (let j = i + 1; j < pLen; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 75) {
+            const lineAlpha = (1 - dist / 75) * 0.12;
+            ctx.strokeStyle = `rgba(99, 102, 241, ${lineAlpha})`;
+            ctx.lineWidth = 0.6;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      for (let i = 0; i < pLen; i++) {
+        particles[i].update();
+        particles[i].draw();
+      }
+
+      requestAnimationFrame(animateParticles);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('mousemove', (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    });
+    window.addEventListener('mouseleave', () => {
+      mouse.x = null;
+      mouse.y = null;
+    });
+
+    // Touch support for mobile antigravity repulsion
+    window.addEventListener('touchmove', (e) => {
+      if (e.touches.length > 0) {
+        mouse.x = e.touches[0].clientX;
+        mouse.y = e.touches[0].clientY;
+      }
+    }, { passive: true });
+    window.addEventListener('touchstart', (e) => {
+      if (e.touches.length > 0) {
+        mouse.x = e.touches[0].clientX;
+        mouse.y = e.touches[0].clientY;
+      }
+    }, { passive: true });
+    window.addEventListener('touchend', () => {
+      mouse.x = null;
+      mouse.y = null;
+    });
+
+    resizeCanvas();
+    animateParticles();
+
+
+    /* ==========================================================
+       3. GAME STATE & PEERJS P2P MULTIPLAYER ENGINE
+       ========================================================== */
+    const PEER_PREFIX = 'agttt-'; // Namespacing for global PeerJS signaling cloud
+
+    // Application state
+    let peer = null;            // PeerJS instance
+    let activeConn = null;      // Active WebRTC DataConnection
+    let isHost = false;         // Is this client the room host?
+    let isMultiplayer = false;  // Multiplayer vs AI
+    let playerSymbol = 'X';     // 'X' or 'O'
+    let currentRoomId = null;   // Active room code
+    let localBoard = Array(9).fill(null);
+    let localTurn = 'X';
+    let localWinner = null;
+    let isAiTurn = false;
+    let scores = { X: 0, O: 0 };
+
+    // Standard winning patterns
+    const WINNING_COMBOS = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+      [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+      [0, 4, 8], [2, 4, 6]             // Diagonals
+    ];
+
+    // UI DOM Elements
+    const lobbyView = document.getElementById('lobbyView');
+    const gameView = document.getElementById('gameView');
+    const boardCells = document.querySelectorAll('.board-cell');
+    const hudRoomBadge = document.getElementById('hudRoomBadge');
+    const hudStatusDetail = document.getElementById('hudStatusDetail');
+    const turnPlayerSpan = document.getElementById('turnPlayerSpan');
+    const cardPlayerX = document.getElementById('cardPlayerX');
+    const cardPlayerO = document.getElementById('cardPlayerO');
+    const p1NameLabel = document.getElementById('p1NameLabel');
+    const p2NameLabel = document.getElementById('p2NameLabel');
+    const p1RoleLabel = document.getElementById('p1RoleLabel');
+    const p2RoleLabel = document.getElementById('p2RoleLabel');
+    const scoreXSpan = document.getElementById('scoreX');
+    const scoreOSpan = document.getElementById('scoreO');
+    const btnRematch = document.getElementById('btnRematch');
+    const btnResetBoard = document.getElementById('btnResetBoard');
+    const winningLineSvg = document.getElementById('winningLineSvg');
+    const winLine = document.getElementById('winLine');
+    const inputRoomCode = document.getElementById('inputRoomCode');
+    const btnCreateRoom = document.getElementById('btnCreateRoom');
+    const btnJoinRoom = document.getElementById('btnJoinRoom');
+    const btnPlayAi = document.getElementById('btnPlayAi');
+    const btnExitGame = document.getElementById('btnExitGame');
+    const btnCopyInvite = document.getElementById('btnCopyInvite');
+    const btnCopyLabel = document.getElementById('btnCopyLabel');
+    const connBadge = document.getElementById('connBadge');
+    const connIndicatorDot = document.getElementById('connIndicatorDot');
+    const connStatusText = document.getElementById('connStatusText');
+    const soundToggleBtn = document.getElementById('soundToggleBtn');
+    const soundIcon = document.getElementById('soundIcon');
+    const soundLabel = document.getElementById('soundLabel');
+
+    // UI Toast Notifications
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const bg = type === 'warning' ? 'bg-amber-600/90 text-white' : type === 'error' ? 'bg-rose-600/90 text-white' : 'bg-cyan-600/90 text-white';
+      
+      toast.className = `${bg} px-3.5 py-2 rounded-xl shadow-xl text-xs font-semibold backdrop-blur-md flex items-center gap-2 border border-white/20 transition-all duration-300 transform translate-y-2 opacity-0`;
+      toast.innerHTML = `<i class="fa-solid fa-satellite text-xs"></i> <span>${message}</span>`;
+      
+      container.appendChild(toast);
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 350);
+      }, 3200);
+    }
+
+    // Modal Helper
+    function showModal(title, message, iconClass = 'fa-circle-info') {
+      const modal = document.getElementById('customModal');
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalMessage').textContent = message;
+      document.getElementById('modalIcon').className = `fa-solid ${iconClass}`;
+      modal.classList.remove('hidden');
+    }
+
+    document.getElementById('modalCloseBtn').onclick = () => {
+      document.getElementById('customModal').classList.add('hidden');
+    };
+
+    function updateNetworkStatus(status, text) {
+      if (status === 'online') {
+        connBadge.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono border border-emerald-500/30 bg-emerald-500/10 text-emerald-300";
+        connIndicatorDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+      } else if (status === 'waiting') {
+        connBadge.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono border border-amber-500/30 bg-amber-500/10 text-amber-300";
+        connIndicatorDot.className = "w-2 h-2 rounded-full bg-amber-400 animate-ping";
+      } else {
+        connBadge.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono border border-cyan-500/30 bg-cyan-500/10 text-cyan-300";
+        connIndicatorDot.className = "w-2 h-2 rounded-full bg-cyan-400";
+      }
+      connStatusText.textContent = text;
+    }
+
+    function switchView(view) {
+      if (view === 'lobby') {
+        lobbyView.classList.remove('hidden');
+        gameView.classList.add('hidden');
+        disconnectP2P();
+        currentRoomId = null;
+        isMultiplayer = false;
+        updateNetworkStatus('ready', 'P2P READY');
+        cleanUrlQuery();
+      } else {
+        lobbyView.classList.add('hidden');
+        gameView.classList.remove('hidden');
+      }
+    }
+
+    function generateRoomCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = '';
+      for (let i = 0; i < 6; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    }
+
+    function cleanUrlQuery() {
+      try {
+        if (window.location.protocol !== 'blob:' && window.location.href.startsWith('http')) {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('room');
+          window.history.replaceState({}, '', url.toString());
+        }
+      } catch (e) {}
+    }
+
+    function setUrlRoomQuery(roomId) {
+      try {
+        if (window.location.protocol !== 'blob:' && window.location.href.startsWith('http')) {
+          const url = new URL(window.location.href);
+          url.searchParams.set('room', roomId);
+          window.history.replaceState({}, '', url.toString());
+        }
+      } catch (e) {}
+    }
+
+    function getShareableUrl(roomId) {
+      try {
+        if (window.location.href.startsWith('http')) {
+          const url = new URL(window.location.href);
+          url.searchParams.set('room', roomId);
+          return url.toString();
+        }
+      } catch (e) {}
+      return `${window.location.origin}${window.location.pathname}?room=${roomId}`;
+    }
+
+    function checkWin(board) {
+      for (let combo of WINNING_COMBOS) {
+        const [a, b, c] = combo;
+        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+          return { winner: board[a], combo };
+        }
+      }
+      if (board.every(cell => cell !== null)) {
+        return { winner: 'DRAW', combo: null };
+      }
+      return null;
+    }
+
+    function drawWinningLaser(combo) {
+      if (!combo) return;
+      const svgRect = winningLineSvg.getBoundingClientRect();
+      const firstCell = boardCells[combo[0]].getBoundingClientRect();
+      const lastCell = boardCells[combo[2]].getBoundingClientRect();
+
+      const x1 = firstCell.left + firstCell.width / 2 - svgRect.left;
+      const y1 = firstCell.top + firstCell.height / 2 - svgRect.top;
+      const x2 = lastCell.left + lastCell.width / 2 - svgRect.left;
+      const y2 = lastCell.top + lastCell.height / 2 - svgRect.top;
+
+      winLine.setAttribute('x1', x1);
+      winLine.setAttribute('y1', y1);
+      winLine.setAttribute('x2', x2);
+      winLine.setAttribute('y2', y2);
+      winningLineSvg.classList.remove('hidden');
+    }
+
+    function hideWinningLaser() {
+      winningLineSvg.classList.add('hidden');
+    }
+
+    window.addEventListener('resize', () => {
+      if (localWinner && localWinner.combo) {
+        drawWinningLaser(localWinner.combo);
+      }
+    });
+
+    function renderBoard(board, turn, winnerInfo) {
+      boardCells.forEach((cell, idx) => {
+        const val = board[idx];
+        cell.innerHTML = '';
+        cell.className = 'board-cell glass-tile rounded-2xl flex items-center justify-center font-orbitron font-black text-4xl sm:text-5xl select-none outline-none transition-all';
+
+        if (val === 'X') {
+          cell.innerHTML = '<span class="text-cyan-400 text-glow-cyan">X</span>';
+          cell.classList.add('glow-cyan');
+        } else if (val === 'O') {
+          cell.innerHTML = '<span class="text-fuchsia-400 text-glow-magenta">O</span>';
+          cell.classList.add('glow-magenta');
+        }
+      });
+
+      // Update Turn Display
+      turnPlayerSpan.textContent = turn;
+      if (turn === 'X') {
+        turnPlayerSpan.className = 'text-cyan-400 font-bold text-glow-cyan';
+        cardPlayerX.classList.add('glow-cyan', 'scale-[1.02]');
+        cardPlayerO.classList.remove('glow-magenta', 'scale-[1.02]');
+      } else {
+        turnPlayerSpan.className = 'text-fuchsia-400 font-bold text-glow-magenta';
+        cardPlayerO.classList.add('glow-magenta', 'scale-[1.02]');
+        cardPlayerX.classList.remove('glow-cyan', 'scale-[1.02]');
+      }
+
+      // Check Outcome
+      if (winnerInfo) {
+        if (winnerInfo.winner === 'DRAW') {
+          hudStatusDetail.textContent = "STALEMATE: GRAVITATIONAL DRAW";
+          turnPlayerSpan.textContent = "DRAW";
+          turnPlayerSpan.className = 'text-amber-400 font-bold';
+        } else {
+          hudStatusDetail.textContent = `VICTORY: PLAYER ${winnerInfo.winner} TRIUMPHS!`;
+          turnPlayerSpan.textContent = `${winnerInfo.winner} WON`;
+          drawWinningLaser(winnerInfo.combo);
+        }
+        btnRematch.classList.remove('hidden');
+      } else {
+        hideWinningLaser();
+        btnRematch.classList.add('hidden');
+        if (isMultiplayer) {
+          if (!activeConn || !activeConn.open) {
+            hudStatusDetail.textContent = isHost ? "Waiting for Player 2 to join..." : "Connecting to Host chamber...";
+          } else {
+            const isMyTurn = (playerSymbol === turn);
+            hudStatusDetail.textContent = isMyTurn ? "Your Quantum Turn!" : "Opponent's Move...";
+          }
+        } else {
+          hudStatusDetail.textContent = (turn === 'X') ? "Your Move (X)" : "AI Calculating Trajectory...";
+        }
+      }
+    }
+
+    function disconnectP2P() {
+      if (activeConn) {
+        try { activeConn.close(); } catch (e) {}
+        activeConn = null;
+      }
+      if (peer) {
+        try { peer.destroy(); } catch (e) {}
+        peer = null;
+      }
+    }
+
+
+    /* ==========================================================
+       4. P2P MULTIPLAYER WITH PEERJS (SERVERLESS WEBRTC)
+       ========================================================== */
+    function initP2PHost(roomId) {
+      if (typeof Peer === 'undefined') {
+        showModal("P2P Engine Offline", "The WebRTC PeerJS library could not be reached. Check your internet connection or battle our Minimax AI.");
+        return;
+      }
+      disconnectP2P();
+
+      currentRoomId = roomId;
+      isMultiplayer = true;
+      isHost = true;
+      playerSymbol = 'X';
+      scores = { X: 0, O: 0 };
+      scoreXSpan.textContent = '0';
+      scoreOSpan.textContent = '0';
+
+      hudRoomBadge.textContent = roomId;
+      btnCopyInvite.classList.remove('hidden');
+      p1NameLabel.textContent = "You (Host)";
+      p2NameLabel.textContent = "Waiting...";
+      p1RoleLabel.textContent = "You are X";
+      p2RoleLabel.textContent = "Player 2 is O";
+
+      updateNetworkStatus('waiting', 'HOSTING ROOM');
+      setUrlRoomQuery(roomId);
+
+      localBoard = Array(9).fill(null);
+      localTurn = 'X';
+      localWinner = null;
+      switchView('game');
+      renderBoard(localBoard, localTurn, null);
+
+      try {
+        const fullPeerId = PEER_PREFIX + roomId.toLowerCase();
+        peer = new Peer(fullPeerId, {
+          debug: 1
+        });
+
+        peer.on('open', (id) => {
+          showToast(`Chamber ${roomId} opened! Share link with a friend.`, "info");
+        });
+
+        peer.on('connection', (conn) => {
+          if (activeConn && activeConn.open) {
+            conn.on('open', () => {
+              conn.send({ type: 'ROOM_FULL' });
+              setTimeout(() => conn.close(), 500);
+            });
+            return;
+          }
+
+          activeConn = conn;
+          setupConnectionEvents(conn);
+        });
+
+        peer.on('error', (err) => {
+          console.error("Host PeerJS error:", err);
+          if (err.type === 'unavailable-id') {
+            // Pick a new code if taken
+            const newCode = generateRoomCode();
+            initP2PHost(newCode);
+          } else {
+            showToast("P2P network error: " + (err.type || 'Connection issue'), "warning");
+          }
+        });
+
+      } catch (err) {
+        console.error("Failed to initialize PeerJS host:", err);
+        showModal("P2P Error", "Could not create P2P host. Check your internet connection.");
+      }
+    }
+
+    function initP2PGuest(roomId) {
+      if (typeof Peer === 'undefined') {
+        showModal("P2P Engine Offline", "The WebRTC PeerJS library could not be reached. Check your internet connection or battle our Minimax AI.");
+        return;
+      }
+      disconnectP2P();
+
+      currentRoomId = roomId;
+      isMultiplayer = true;
+      isHost = false;
+      playerSymbol = 'O';
+      scores = { X: 0, O: 0 };
+      scoreXSpan.textContent = '0';
+      scoreOSpan.textContent = '0';
+
+      hudRoomBadge.textContent = roomId;
+      btnCopyInvite.classList.remove('hidden');
+      p1NameLabel.textContent = "Host (X)";
+      p2NameLabel.textContent = "You (O)";
+      p1RoleLabel.textContent = "Player 1";
+      p2RoleLabel.textContent = "You are O";
+
+      updateNetworkStatus('waiting', 'CONNECTING...');
+      setUrlRoomQuery(roomId);
+
+      localBoard = Array(9).fill(null);
+      localTurn = 'X';
+      localWinner = null;
+      switchView('game');
+      renderBoard(localBoard, localTurn, null);
+
+      try {
+        peer = new Peer({
+          debug: 1
+        });
+
+        peer.on('open', (id) => {
+          const targetHostId = PEER_PREFIX + roomId.toLowerCase();
+          const conn = peer.connect(targetHostId, { reliable: true });
+          activeConn = conn;
+          setupConnectionEvents(conn);
+        });
+
+        peer.on('error', (err) => {
+          console.error("Guest PeerJS error:", err);
+          if (err.type === 'peer-unavailable') {
+            showModal("Room Not Found", `Gravity chamber "${roomId}" was not found or the host is offline.\n\nVerify the room code or battle our Minimax AI.`);
+            switchView('lobby');
+          } else {
+            showToast("P2P issue: " + (err.type || 'Network glitch'), "warning");
+          }
+        });
+
+      } catch (err) {
+        console.error("Failed to initialize PeerJS guest:", err);
+        showModal("P2P Error", "Could not connect to peer. Check your connection.");
+      }
+    }
+
+    function setupConnectionEvents(conn) {
+      conn.on('open', () => {
+        updateNetworkStatus('online', 'P2P CONNECTED');
+        sound.playPop();
+
+        if (isHost) {
+          p2NameLabel.textContent = "Player 2 (Online)";
+          showToast("Player 2 connected! Match begins.", "info");
+          // Synchronize initial state to guest
+          conn.send({
+            type: 'INIT_STATE',
+            board: localBoard,
+            turn: localTurn,
+            scores: scores
+          });
+        } else {
+          p1NameLabel.textContent = "Host (Online)";
+          showToast("Connected to host chamber!", "info");
+          conn.send({ type: 'GUEST_READY' });
+        }
+
+        renderBoard(localBoard, localTurn, localWinner);
+      });
+
+      conn.on('data', (data) => {
+        handlePeerData(data);
+      });
+
+      conn.on('close', () => {
+        updateNetworkStatus('waiting', 'OPPONENT LEFT');
+        showToast("Opponent disconnected from orbit.", "warning");
+        if (isHost) {
+          p2NameLabel.textContent = "Disconnected";
+        } else {
+          p1NameLabel.textContent = "Disconnected";
+        }
+        hudStatusDetail.textContent = "Opponent lost orbit (disconnected)";
+      });
+
+      conn.on('error', (err) => {
+        console.error("Connection data channel error:", err);
+      });
+    }
+
+    function handlePeerData(data) {
+      if (!data || !data.type) return;
+
+      switch (data.type) {
+        case 'INIT_STATE':
+          localBoard = data.board || Array(9).fill(null);
+          localTurn = data.turn || 'X';
+          scores = data.scores || { X: 0, O: 0 };
+          scoreXSpan.textContent = scores.X;
+          scoreOSpan.textContent = scores.O;
+          renderBoard(localBoard, localTurn, null);
+          break;
+
+        case 'MOVE':
+          localBoard = data.board;
+          localTurn = data.turn;
+          localWinner = data.winner;
+          scores = data.scores || scores;
+          scoreXSpan.textContent = scores.X;
+          scoreOSpan.textContent = scores.O;
+
+          if (data.symbol === 'X') sound.playXMove();
+          else sound.playOMove();
+
+          if (localWinner) {
+            if (localWinner.winner === 'DRAW') sound.playDraw();
+            else sound.playWin();
+          }
+
+          renderBoard(localBoard, localTurn, localWinner);
+          break;
+
+        case 'REMATCH':
+          localBoard = Array(9).fill(null);
+          localTurn = 'X';
+          localWinner = null;
+          hideWinningLaser();
+          renderBoard(localBoard, localTurn, null);
+          sound.playPop();
+          showToast("Rematch started by opponent!", "info");
+          break;
+
+        case 'EMOJI':
+          triggerFloatingEmoji(data.emoji, false);
+          break;
+
+        case 'ROOM_FULL':
+          showModal("Chamber Full", "This match already has two commanders in orbit.");
+          switchView('lobby');
+          break;
+      }
+    }
+
+
+    /* ==========================================================
+       5. MINIMAX AI ENGINE (FALLBACK UNBEATABLE SOLO MODE)
+       ========================================================== */
+    function startSoloAiMatch() {
+      disconnectP2P();
+
+      isMultiplayer = false;
+      playerSymbol = 'X';
+      currentRoomId = 'SOLO-AI';
+      hudRoomBadge.textContent = 'AI ARENA';
+      btnCopyInvite.classList.add('hidden');
+
+      p1NameLabel.textContent = "Commander (You)";
+      p2NameLabel.textContent = "Minimax Neural Core";
+      p1RoleLabel.textContent = "You are X";
+      p2RoleLabel.textContent = "AI is O";
+      scores = { X: 0, O: 0 };
+      scoreXSpan.textContent = '0';
+      scoreOSpan.textContent = '0';
+
+      updateNetworkStatus('ready', 'SOLO AI MODE');
+      cleanUrlQuery();
+
+      resetLocalBoard();
+      switchView('game');
+      showToast("Solo match started vs Minimax AI.", "info");
+    }
+
+    function resetLocalBoard() {
+      localBoard = Array(9).fill(null);
+      localTurn = 'X';
+      localWinner = null;
+      hideWinningLaser();
+      renderBoard(localBoard, localTurn, null);
+    }
+
+    // Minimax recursive search
+    function minimax(board, depth, isMaximizing) {
+      const res = checkWin(board);
+      if (res) {
+        if (res.winner === 'O') return 10 - depth; // AI victory
+        if (res.winner === 'X') return depth - 10; // Human victory
+        if (res.winner === 'DRAW') return 0;       // Tie
+      }
+
+      if (isMaximizing) {
+        let best = -Infinity;
+        for (let i = 0; i < 9; i++) {
+          if (board[i] === null) {
+            board[i] = 'O';
+            best = Math.max(best, minimax(board, depth + 1, false));
+            board[i] = null;
+          }
+        }
+        return best;
+      } else {
+        let best = Infinity;
+        for (let i = 0; i < 9; i++) {
+          if (board[i] === null) {
+            board[i] = 'X';
+            best = Math.min(best, minimax(board, depth + 1, true));
+            board[i] = null;
+          }
+        }
+        return best;
+      }
+    }
+
+    function getBestMove(board) {
+      // 1. Center opening heuristic for variety and performance
+      const emptyCells = board.map((v, i) => v === null ? i : null).filter(v => v !== null);
+      if (emptyCells.length === 8 && board[4] === null) return 4;
+      if (emptyCells.length === 9) return 4;
+
+      // 2. Full Minimax calculation
+      let bestScore = -Infinity;
+      let move = -1;
+
+      for (let i = 0; i < 9; i++) {
+        if (board[i] === null) {
+          board[i] = 'O';
+          let score = minimax(board, 0, false);
+          board[i] = null;
+          if (score > bestScore) {
+            bestScore = score;
+            move = i;
+          }
+        }
+      }
+      return move !== -1 ? move : emptyCells[0];
+    }
+
+    function executeAiTurn() {
+      if (localWinner || isMultiplayer) return;
+      isAiTurn = true;
+      hudStatusDetail.textContent = "AI Computing Orbital Trajectory...";
+
+      setTimeout(() => {
+        const aiMove = getBestMove([...localBoard]);
+        if (aiMove !== -1 && localBoard[aiMove] === null) {
+          localBoard[aiMove] = 'O';
+          sound.playOMove();
+
+          const winCheck = checkWin(localBoard);
+          if (winCheck) {
+            localWinner = winCheck;
+            if (winCheck.winner === 'O') {
+              scores.O++;
+              scoreOSpan.textContent = scores.O;
+              sound.playWin();
+            } else if (winCheck.winner === 'DRAW') {
+              sound.playDraw();
+            }
+          } else {
+            localTurn = 'X';
+          }
+          renderBoard(localBoard, localTurn, localWinner);
+        }
+        isAiTurn = false;
+      }, 360);
+    }
+
+
+    /* ==========================================================
+       6. INTERACTIVE ACTIONS & GAMEPLAY
+       ========================================================== */
+    function handleCellClick(index) {
+      if (localBoard[index] !== null || localWinner) return;
+
+      // Solo Mode (Play vs Minimax AI)
+      if (!isMultiplayer) {
+        if (localTurn !== 'X' || isAiTurn) return;
+
+        localBoard[index] = 'X';
+        sound.playXMove();
+
+        const winCheck = checkWin(localBoard);
+        if (winCheck) {
+          localWinner = winCheck;
+          if (winCheck.winner === 'X') {
+            scores.X++;
+            scoreXSpan.textContent = scores.X;
+            sound.playWin();
+          } else if (winCheck.winner === 'DRAW') {
+            sound.playDraw();
+          }
+          renderBoard(localBoard, localTurn, localWinner);
+        } else {
+          localTurn = 'O';
+          renderBoard(localBoard, localTurn, null);
+          executeAiTurn();
+        }
+        return;
+      }
+
+      // Multiplayer Mode
+      if (!activeConn || !activeConn.open) {
+        showToast("Waiting for opponent to join chamber...", "warning");
+        return;
+      }
+
+      if (localTurn !== playerSymbol) {
+        showToast("Wait for your quantum turn!", "warning");
+        return;
+      }
+
+      // Execute Player Move
+      localBoard[index] = playerSymbol;
+      if (playerSymbol === 'X') sound.playXMove();
+      else sound.playOMove();
+
+      const winResult = checkWin(localBoard);
+      let nextTurn = playerSymbol === 'X' ? 'O' : 'X';
+
+      if (winResult) {
+        localWinner = winResult;
+        if (winResult.winner === 'X') scores.X++;
+        if (winResult.winner === 'O') scores.O++;
+        scoreXSpan.textContent = scores.X;
+        scoreOSpan.textContent = scores.O;
+
+        if (winResult.winner === 'DRAW') sound.playDraw();
+        else sound.playWin();
+      } else {
+        localTurn = nextTurn;
+      }
+
+      renderBoard(localBoard, localTurn, localWinner);
+
+      // Transmit to peer
+      try {
+        activeConn.send({
+          type: 'MOVE',
+          index: index,
+          symbol: playerSymbol,
+          board: localBoard,
+          turn: localTurn,
+          winner: localWinner,
+          scores: scores
+        });
+      } catch (err) {
+        console.error("Move transmit error:", err);
+        showToast("Failed to transmit move telemetry.", "error");
+      }
+    }
+
+    function triggerRematch() {
+      sound.playPop();
+
+      if (!isMultiplayer) {
+        resetLocalBoard();
+        return;
+      }
+
+      localBoard = Array(9).fill(null);
+      localTurn = 'X';
+      localWinner = null;
+      hideWinningLaser();
+      renderBoard(localBoard, localTurn, null);
+
+      if (activeConn && activeConn.open) {
+        try {
+          activeConn.send({ type: 'REMATCH' });
+          showToast("Rematch started! New round.", "info");
+        } catch (e) {
+          console.error("Rematch send error:", e);
+        }
+      }
+    }
+
+    function triggerFloatingEmoji(emoji, isLocalEmit = true) {
+      sound.playEmoji(emoji);
+      const container = document.getElementById('reactionOverlay');
+      const el = document.createElement('div');
+      el.className = 'absolute text-4xl select-none pointer-events-none transition-all duration-1000 transform';
+      el.textContent = emoji;
+
+      const startX = Math.random() * (window.innerWidth - 80) + 40;
+      el.style.left = `${startX}px`;
+      el.style.bottom = '50px';
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0px) scale(0.6)';
+
+      container.appendChild(el);
+
+      requestAnimationFrame(() => {
+        el.style.transform = `translateY(-${window.innerHeight * 0.55}px) scale(1.6) rotate(${Math.random() * 40 - 20}deg)`;
+        el.style.opacity = '0';
+      });
+
+      setTimeout(() => el.remove(), 1200);
+
+      // Send to peer if local emit
+      if (isLocalEmit && isMultiplayer && activeConn && activeConn.open) {
+        try {
+          activeConn.send({ type: 'EMOJI', emoji: emoji });
+        } catch (e) {}
+      }
+    }
+
+    // Share link copying with robust clipboard fallback
+    async function copyInviteLink() {
+      sound.playPop();
+      if (!currentRoomId || currentRoomId === 'SOLO-AI') return;
+
+      const shareUrl = getShareableUrl(currentRoomId);
+
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(shareUrl);
+          onCopySuccess(shareUrl);
+        } else {
+          copyFallback(shareUrl);
+        }
+      } catch (err) {
+        copyFallback(shareUrl);
+      }
+    }
+
+    function copyFallback(text) {
+      const tempInput = document.createElement("textarea");
+      tempInput.value = text;
+      tempInput.style.position = "fixed";
+      tempInput.style.opacity = "0";
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      try {
+        document.execCommand("copy");
+        onCopySuccess(text);
+      } catch (e) {
+        showModal("Chamber Share Link", `Copy this link to invite a friend:\n\n${text}`);
+      }
+      document.body.removeChild(tempInput);
+    }
+
+    function onCopySuccess(url) {
+      btnCopyLabel.textContent = "COPIED! ✓";
+      showToast("Invite link copied to clipboard! Send to your friend.", "info");
+      setTimeout(() => {
+        btnCopyLabel.textContent = "Share Link";
+      }, 2500);
+    }
+
+
+    /* ==========================================================
+       7. EVENT LISTENERS & BOOTSTRAP
+       ========================================================== */
+    // Board cell clicks
+    boardCells.forEach(cell => {
+      cell.addEventListener('click', () => {
+        const idx = parseInt(cell.getAttribute('data-index'), 10);
+        handleCellClick(idx);
+      });
+    });
+
+    // Emoji reaction clicks
+    document.querySelectorAll('.reaction-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const emoji = btn.getAttribute('data-emoji');
+        triggerFloatingEmoji(emoji, true);
+      });
+    });
+
+    // Host Room
+    btnCreateRoom.addEventListener('click', () => {
+      sound.playPop();
+      const newRoom = generateRoomCode();
+      initP2PHost(newRoom);
+    });
+
+    // Join Room
+    btnJoinRoom.addEventListener('click', () => {
+      sound.playPop();
+      const code = inputRoomCode.value.trim().toUpperCase();
+      if (!code || code.length < 3) {
+        showToast("Enter a valid Room Code", "warning");
+        return;
+      }
+      initP2PGuest(code);
+    });
+
+    // Enter key inside room input
+    inputRoomCode.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        btnJoinRoom.click();
+      }
+    });
+
+    // Solo AI Button
+    btnPlayAi.addEventListener('click', () => {
+      sound.playPop();
+      startSoloAiMatch();
+    });
+
+    // Rematch & Reset
+    btnRematch.addEventListener('click', triggerRematch);
+    btnResetBoard.addEventListener('click', triggerRematch);
+
+    // Exit Game
+    btnExitGame.addEventListener('click', () => {
+      sound.playPop();
+      switchView('lobby');
+    });
+
+    // Copy Invite
+    btnCopyInvite.addEventListener('click', copyInviteLink);
+
+    // Audio SFX Toggle
+    soundToggleBtn.addEventListener('click', () => {
+      sound.enabled = !sound.enabled;
+      try {
+        localStorage.setItem('ag_sfx_enabled', sound.enabled);
+      } catch (e) {}
+
+      if (sound.enabled) {
+        soundIcon.className = "fa-solid fa-volume-high text-cyan-400";
+        soundLabel.textContent = "SFX: ON";
+        sound.playPop();
+      } else {
+        soundIcon.className = "fa-solid fa-volume-xmark text-gray-500";
+        soundLabel.textContent = "SFX: OFF";
+      }
+    });
+
+    // Restore saved audio state
+    if (!sound.enabled) {
+      soundIcon.className = "fa-solid fa-volume-xmark text-gray-500";
+      soundLabel.textContent = "SFX: OFF";
+    }
+
+    // URL Query Check for Auto-Join
+    (function checkUrlQuery() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const queryRoom = params.get('room');
+        if (queryRoom && queryRoom.trim().length >= 3) {
+          const cleanCode = queryRoom.trim().toUpperCase();
+          inputRoomCode.value = cleanCode;
+          showToast(`Connecting to room ${cleanCode}...`, "info");
+          initP2PGuest(cleanCode);
+        }
+      } catch (e) {
+        console.warn("URL query check error:", e);
+      }
+    })();
+  </script>
+</body>
+</html>
