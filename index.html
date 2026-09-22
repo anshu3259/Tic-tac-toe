@@ -380,6 +380,90 @@
   <!-- Non-blocking Floating Notification / Toast -->
   <div id="toastContainer" class="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-50 flex flex-col gap-2 pointer-events-none max-w-xs"></div>
 
+  <!-- Dedicated Share & Invite Modal -->
+  <div id="shareModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="glass-panel border border-cyan-500/30 rounded-3xl p-5 sm:p-7 max-w-md w-full shadow-2xl relative overflow-hidden transition-all duration-300">
+      
+      <!-- Ambient Glow Orbs -->
+      <div class="absolute -top-10 -right-10 w-32 h-32 bg-cyan-500/20 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-fuchsia-500/20 rounded-full blur-2xl pointer-events-none"></div>
+
+      <!-- Close Button -->
+      <button id="btnShareModalClose" class="absolute top-4 right-4 text-gray-400 hover:text-white p-2 rounded-xl hover:bg-white/10 transition text-sm" title="Close">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+
+      <!-- Modal Header -->
+      <div class="flex items-center space-x-3 mb-5">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-500/30 to-indigo-500/30 border border-cyan-400/50 flex items-center justify-center text-cyan-300 text-xl shadow-lg shadow-cyan-500/20">
+          <i class="fa-solid fa-satellite-dish animate-pulse"></i>
+        </div>
+        <div>
+          <h3 class="font-orbitron font-extrabold text-base sm:text-lg text-white tracking-wide">
+            INVITE COMMANDER
+          </h3>
+          <p class="text-[11px] text-cyan-300/70 font-mono">Zero-G Realtime P2P Telemetry</p>
+        </div>
+      </div>
+
+      <!-- Section 1: Prominent 6-Character Room Code -->
+      <div class="p-3.5 sm:p-4 rounded-2xl bg-black/40 border border-white/10 mb-4 flex items-center justify-between">
+        <div>
+          <span class="text-[10px] font-mono text-gray-400 uppercase tracking-wider block mb-0.5">Chamber Access Code</span>
+          <span id="modalRoomCodeDisplay" class="font-orbitron font-black text-2xl sm:text-3xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-indigo-200 to-fuchsia-300 tracking-widest select-all">
+            ------
+          </span>
+        </div>
+        <button id="btnCopyRoomCodeOnly" class="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-cyan-300 hover:text-white text-xs font-mono font-semibold transition active:scale-95 flex items-center gap-1.5 shadow-sm">
+          <i class="fa-regular fa-copy"></i>
+          <span id="labelCopyCode">Copy Code</span>
+        </button>
+      </div>
+
+      <!-- Section 2: Direct Join URL with One-Click Copy -->
+      <div class="mb-5">
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="text-[10px] font-mono text-gray-400 uppercase tracking-wider">Direct Auto-Join URL</label>
+          <span class="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Bypasses Lobby
+          </span>
+        </div>
+        <div class="flex gap-2">
+          <input id="modalDirectUrlInput" type="text" readonly class="flex-grow px-3 py-2.5 rounded-xl bg-black/50 border border-white/10 text-xs font-mono text-gray-300 focus:outline-none focus:border-cyan-400/50 select-all truncate" value="">
+          <button id="btnCopyDirectUrl" class="px-3.5 sm:px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-orbitron font-bold text-xs tracking-wider rounded-xl transition shadow-lg shadow-cyan-500/25 active:scale-95 flex items-center gap-1.5 shrink-0">
+            <i class="fa-solid fa-copy"></i>
+            <span id="labelCopyUrl">Copy Link</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Section 3: Instant Quick-Share Dispatch (WhatsApp, Telegram, Native Share) -->
+      <div>
+        <label class="text-[10px] font-mono text-gray-400 uppercase tracking-wider block mb-2">Instant Dispatch Channels</label>
+        <div class="grid grid-cols-3 gap-2">
+          <!-- WhatsApp Button -->
+          <button id="btnShareWhatsapp" class="py-2.5 px-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 hover:border-emerald-400 text-emerald-300 hover:text-emerald-200 transition text-xs font-semibold flex flex-col sm:flex-row items-center justify-center gap-1.5 active:scale-95">
+            <i class="fa-brands fa-whatsapp text-base text-emerald-400"></i>
+            <span class="text-[11px] font-mono">WhatsApp</span>
+          </button>
+
+          <!-- Telegram Button -->
+          <button id="btnShareTelegram" class="py-2.5 px-2 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 hover:border-sky-400 text-sky-300 hover:text-sky-200 transition text-xs font-semibold flex flex-col sm:flex-row items-center justify-center gap-1.5 active:scale-95">
+            <i class="fa-brands fa-telegram text-base text-sky-400"></i>
+            <span class="text-[11px] font-mono">Telegram</span>
+          </button>
+
+          <!-- Native Web Share Sheet -->
+          <button id="btnShareNative" class="py-2.5 px-2 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/40 hover:border-indigo-400 text-indigo-300 hover:text-indigo-200 transition text-xs font-semibold flex flex-col sm:flex-row items-center justify-center gap-1.5 active:scale-95">
+            <i class="fa-solid fa-arrow-up-from-bracket text-base text-indigo-400"></i>
+            <span class="text-[11px] font-mono">Share Sheet</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Custom Alert Modal (Zero window.alert) -->
   <div id="customModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md hidden flex items-center justify-center p-4">
     <div class="glass-panel border border-white/20 rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl">
@@ -987,6 +1071,7 @@
 
         peer.on('open', (id) => {
           showToast(`Chamber ${roomId} opened! Share link with a friend.`, "info");
+          openShareModal();
         });
 
         peer.on('connection', (conn) => {
@@ -1086,6 +1171,7 @@
         if (isHost) {
           p2NameLabel.textContent = "Player 2 (Online)";
           showToast("Player 2 connected! Match begins.", "info");
+          closeShareModal();
           // Synchronize initial state to guest
           conn.send({
             type: 'INIT_STATE',
@@ -1436,26 +1522,124 @@
       }
     }
 
-    // Share link copying with robust clipboard fallback
-    async function copyInviteLink() {
+    /* ==========================================================
+       SHARE & INVITE MODAL CONTROLLER
+       ========================================================== */
+    function openShareModal() {
       sound.playPop();
-      if (!currentRoomId || currentRoomId === 'SOLO-AI') return;
+      if (!currentRoomId || currentRoomId === 'SOLO-AI') {
+        showToast("Create a private room to invite friends!", "info");
+        return;
+      }
 
       const shareUrl = getShareableUrl(currentRoomId);
+      const shareModal = document.getElementById('shareModal');
+      const modalRoomCodeDisplay = document.getElementById('modalRoomCodeDisplay');
+      const modalDirectUrlInput = document.getElementById('modalDirectUrlInput');
+      const labelCopyCode = document.getElementById('labelCopyCode');
+      const labelCopyUrl = document.getElementById('labelCopyUrl');
+
+      if (modalRoomCodeDisplay) modalRoomCodeDisplay.textContent = currentRoomId;
+      if (modalDirectUrlInput) modalDirectUrlInput.value = shareUrl;
+      if (labelCopyCode) labelCopyCode.textContent = "Copy Code";
+      if (labelCopyUrl) labelCopyUrl.textContent = "Copy Link";
+
+      if (shareModal) shareModal.classList.remove('hidden');
+    }
+
+    function closeShareModal() {
+      const shareModal = document.getElementById('shareModal');
+      if (shareModal) shareModal.classList.add('hidden');
+    }
+
+    // Direct Join Link Copy (One-Click)
+    async function copyDirectUrl() {
+      sound.playPop();
+      if (!currentRoomId || currentRoomId === 'SOLO-AI') return;
+      const shareUrl = getShareableUrl(currentRoomId);
+      const label = document.getElementById('labelCopyUrl');
 
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(shareUrl);
-          onCopySuccess(shareUrl);
         } else {
-          copyFallback(shareUrl);
+          copyToClipboardRaw(shareUrl);
         }
-      } catch (err) {
-        copyFallback(shareUrl);
+        if (label) label.textContent = "COPIED! ✓";
+        showToast("Direct join link copied! Send to your friend.", "info");
+        setTimeout(() => { if (label) label.textContent = "Copy Link"; }, 2000);
+      } catch (e) {
+        copyToClipboardRaw(shareUrl);
       }
     }
 
-    function copyFallback(text) {
+    // Prominent 6-Character Room Code Copy
+    async function copyRoomCodeOnly() {
+      sound.playPop();
+      if (!currentRoomId || currentRoomId === 'SOLO-AI') return;
+      const label = document.getElementById('labelCopyCode');
+
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(currentRoomId);
+        } else {
+          copyToClipboardRaw(currentRoomId);
+        }
+        if (label) label.textContent = "COPIED! ✓";
+        showToast(`Room code "${currentRoomId}" copied to clipboard!`, "info");
+        setTimeout(() => { if (label) label.textContent = "Copy Code"; }, 2000);
+      } catch (e) {
+        copyToClipboardRaw(currentRoomId);
+      }
+    }
+
+    // Quick-Share Dispatch: WhatsApp
+    function shareToWhatsApp() {
+      sound.playPop();
+      if (!currentRoomId || currentRoomId === 'SOLO-AI') return;
+      const shareUrl = getShareableUrl(currentRoomId);
+      const msg = `🚀 Antigravity Tic-Tac-Toe Challenge!\n\nJoin my zero-gravity P2P match in Chamber: ${currentRoomId}\n\nClick link to auto-join directly:\n${shareUrl}`;
+      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+    }
+
+    // Quick-Share Dispatch: Telegram
+    function shareToTelegram() {
+      sound.playPop();
+      if (!currentRoomId || currentRoomId === 'SOLO-AI') return;
+      const shareUrl = getShareableUrl(currentRoomId);
+      const text = `🚀 Antigravity Tic-Tac-Toe Match!\nChamber: ${currentRoomId}\nJoin directly via link:`;
+      const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`;
+      window.open(tgUrl, '_blank', 'noopener,noreferrer');
+    }
+
+    // Quick-Share Dispatch: Native Web Share Sheet
+    async function shareNativeSheet() {
+      sound.playPop();
+      if (!currentRoomId || currentRoomId === 'SOLO-AI') return;
+      const shareUrl = getShareableUrl(currentRoomId);
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'Antigravity Tic-Tac-Toe',
+            text: `🚀 Battle me in zero-gravity Antigravity Tic-Tac-Toe! Chamber: ${currentRoomId}`,
+            url: shareUrl
+          });
+          showToast("Share sheet opened!", "info");
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            console.warn("Native share error:", err);
+          }
+        }
+      } else {
+        // Fallback if browser doesn't support navigator.share
+        copyDirectUrl();
+      }
+    }
+
+    // Robust raw clipboard copy fallback
+    function copyToClipboardRaw(text) {
       const tempInput = document.createElement("textarea");
       tempInput.value = text;
       tempInput.style.position = "fixed";
@@ -1464,19 +1648,11 @@
       tempInput.select();
       try {
         document.execCommand("copy");
-        onCopySuccess(text);
+        showToast("Copied to clipboard!", "info");
       } catch (e) {
-        showModal("Chamber Share Link", `Copy this link to invite a friend:\n\n${text}`);
+        showModal("Chamber Share", `Copy this to invite a friend:\n\n${text}`);
       }
       document.body.removeChild(tempInput);
-    }
-
-    function onCopySuccess(url) {
-      btnCopyLabel.textContent = "COPIED! ✓";
-      showToast("Invite link copied to clipboard! Send to your friend.", "info");
-      setTimeout(() => {
-        btnCopyLabel.textContent = "Share Link";
-      }, 2500);
     }
 
 
@@ -1540,8 +1716,36 @@
       switchView('lobby');
     });
 
-    // Copy Invite
-    btnCopyInvite.addEventListener('click', copyInviteLink);
+    // Share & Invite Modal Triggers & Controls
+    btnCopyInvite.addEventListener('click', openShareModal);
+    hudRoomBadge.classList.add('cursor-pointer', 'hover:border-cyan-400/80', 'transition');
+    hudRoomBadge.title = "Click to open Share & Invite Modal";
+    hudRoomBadge.addEventListener('click', openShareModal);
+
+    const btnShareModalClose = document.getElementById('btnShareModalClose');
+    if (btnShareModalClose) btnShareModalClose.addEventListener('click', closeShareModal);
+
+    const shareModalEl = document.getElementById('shareModal');
+    if (shareModalEl) {
+      shareModalEl.addEventListener('click', (e) => {
+        if (e.target.id === 'shareModal') closeShareModal();
+      });
+    }
+
+    const btnCopyRoomCodeOnly = document.getElementById('btnCopyRoomCodeOnly');
+    if (btnCopyRoomCodeOnly) btnCopyRoomCodeOnly.addEventListener('click', copyRoomCodeOnly);
+
+    const btnCopyDirectUrl = document.getElementById('btnCopyDirectUrl');
+    if (btnCopyDirectUrl) btnCopyDirectUrl.addEventListener('click', copyDirectUrl);
+
+    const btnShareWhatsapp = document.getElementById('btnShareWhatsapp');
+    if (btnShareWhatsapp) btnShareWhatsapp.addEventListener('click', shareToWhatsApp);
+
+    const btnShareTelegram = document.getElementById('btnShareTelegram');
+    if (btnShareTelegram) btnShareTelegram.addEventListener('click', shareToTelegram);
+
+    const btnShareNative = document.getElementById('btnShareNative');
+    if (btnShareNative) btnShareNative.addEventListener('click', shareNativeSheet);
 
     // Audio SFX Toggle
     soundToggleBtn.addEventListener('click', () => {
@@ -1566,7 +1770,7 @@
       soundLabel.textContent = "SFX: OFF";
     }
 
-    // URL Query Check for Auto-Join
+    // Auto-Join Support: Bypasses home screen and connects straight into game room
     (function checkUrlQuery() {
       try {
         const params = new URLSearchParams(window.location.search);
@@ -1574,11 +1778,11 @@
         if (queryRoom && queryRoom.trim().length >= 3) {
           const cleanCode = queryRoom.trim().toUpperCase();
           inputRoomCode.value = cleanCode;
-          showToast(`Connecting to room ${cleanCode}...`, "info");
+          showToast(`Auto-joining chamber ${cleanCode}...`, "info");
           initP2PGuest(cleanCode);
         }
       } catch (e) {
-        console.warn("URL query check error:", e);
+        console.warn("URL query auto-join error:", e);
       }
     })();
   </script>
